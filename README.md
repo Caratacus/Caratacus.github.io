@@ -38,34 +38,6 @@
 </p>
 
 -----------------------------------------------------------------------------------------------
-### 特性
-<sup>1</sup> 标准的**Restful**风格，完美的标准化API <br/>
-<sup>2</sup> 防止**XSS**攻击、**SQL**注入，妈妈再也不用担心我的安全问题 <br/>
-<sup>3</sup> 深度定制**mybatis-plus**，各种新鲜玩法 <br/>
-<sup>4</sup> 深入拓展**ModelMapper**，各种类型一键转换 <br/>
-<sup>5</sup> 运用**Liquibase**，增量**SQL**一键导出 <br/>
-<sup>6</sup> 接口**日志详情**打印，所有访问信息**一览无遗** <br/>
-<sup>7</sup> **P6spy**打印SQL，一切操作尽在掌握 <br/>
-<sup>8</sup> 基于**Shiro** **RestApi** 鉴权 <br/>
-<sup>9</sup> **Mock**测试、**TravisCI**保驾护航，BUG再见，再也不见 <br/>
-
------------------------------------------------------------------------------------------------
-### 技术选型
-<sup>1</sup> 核心框架: SpringBoot <br/>
-<sup>2</sup> 持久层框架: mybatis、mybatis-plus <br/>
-<sup>3</sup> 数据库连接池: HikariCP <br/>
-<sup>4</sup> SQL脚本: Liquibase <br/>
-<sup>5</sup> 数据校验: HibernateValidator <br/>
-<sup>6</sup> 对象转换: ModelMapper <br/>
-<sup>7</sup> JSON转换: Jackson <br/>
-<sup>8</sup> 接口文档: Swagger <br/>
-<sup>9</sup> 基础工具类: ApacheCommons、VjTools <br/>
-<sup>10</sup> 日志: SLF4J、Async Log4j2 <br/>
-<sup>11</sup> SQL打印: P6spy <br/>
-<sup>12</sup> 权限认证: Shiro <br/>
-<sup>13</sup> 页面: layui <br/>
-
------------------------------------------------------------------------------------------------
 ![login.jpg](https://raw.githubusercontent.com/Caratacus/Resource/master/crown/login.jpg)
 <br>
 ![user.png](https://raw.githubusercontent.com/Caratacus/Resource/master/crown/user.png)

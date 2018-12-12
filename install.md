@@ -1,23 +1,20 @@
-# How to install
+# 快速开始
 
-Just add it as an npm/yarn dependency:
+<sup>1</sup> JDK1.8+ <br/>
+<sup>2</sup> MySQL5.7+ <br/>
+<sup>3</sup> Git1.7+ <br/>
 
-```npm install galio-framework```
-or
-```yarn install galio-framework```
+准备好上述环境，什么？没有要求安装Gradle？项目已经集成好了`gradlew`不用安装
 
-And just import the component you want in your application:
+-```git clone git@github.com:Caratacus/Crown.git```
 
-```import { Text } from 'galio-framework'```
+-```导入crown.sql文件（项目根路径下src/test/resources/sql/crown.sql）至数据库```
 
-This seems really easy right? Just use your component like you would normally do with any other component.
+-```./gradlew clean build -x test```（windows系统把`./gradlew`替换成`gradlew.bat`）
 
-```js
-render() {
-  return (
-    <View>
-      <Text p muted>Hi, I'm a Galio component</Text>
-    </View>
-  );
-}
-```
+-```java -jar build/libs/crown.jar```
+
+-```访问http://localhost:8088```
+
+完成上面五步，项目已经运行起来了
+
