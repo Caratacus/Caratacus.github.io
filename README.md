@@ -1,9 +1,11 @@
+## Crown
+
+> Crown的目标，用最简单的代码写最复杂的业务。
+
+-----------------------------------------------------------------------------------------------
 <p align="center">
     <img src="https://raw.githubusercontent.com/Caratacus/Crown/master/Crown.png" width="300">
     <p align="center">
-        Crown的目标，用最简单的代码写最复杂的业务。
-        <br>
-        <br>
         Based on SpringBoot2, Crown builds a rapidly developed web application scaffolding.
         <br>
         <br>

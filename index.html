@@ -1,52 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Crown Docs</title>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-  <meta name="description" content="Description">
-  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <link rel="stylesheet" href="//unpkg.com/docsify-themeable/dist/css/theme-simple.css">
-  <link rel="stylesheet" href="//unpkg.com/element-ui/lib/theme-chalk/index.css">
-  <style>
-    :root {
-      --theme-color: #ff006e;
-    }
-  </style>
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-MJ9SQDH');</script>
-  <!-- End Google Tag Manager -->
+    <meta charset="UTF-8">
+    <title>Crown Docs</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/vue.css">
+    <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/buble.css">
+    <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/pure.css">
+    <style>
+        :root {
+            --theme-color: #9ab5ff;
+        }
+        nav.app-nav li ul {
+            min-width: 100px;
+        }
+    </style>
 </head>
+
 <body>
-<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MJ9SQDH"
-                  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->
 <div id="app"></div>
 <script>
     window.$docsify = {
-        // name of wiki
-        name: 'Crown Docs',
-        // link to galio github
-        repo: 'https://github.com/Caratacus/Crown',
         alias: {
             '/.*/_navbar.md': '/_navbar.md',
             '/.*/_sidebar.md': '/_sidebar.md'
         },
-        // load navbar into sidebar on small screen
-        mergeNavbar: true,
-        // load sidebar
-        loadSidebar: true,
-        // load navbar
+        notFoundPage: '_404.html',
+        auto2top: true,
+        basePath: '/',
+        executeScript: true,
         loadNavbar: true,
+        loadSidebar: true,
+        coverpage: true,
+        name: 'Crown Docs',
+        subMaxLevel: 2,
+        mergeNavbar: true,
+        formatUpdated: '{MM}/{DD} {HH}:{mm}'
     }
 </script>
 <script src="//unpkg.com/docsify/lib/docsify.min.js"></script>
 <script src="https://unpkg.com/docsify-copy-code@2"></script>
+<script src="//unpkg.com/prismjs/components/prism-bash.js"></script>
 
 </body>
+
 </html>
