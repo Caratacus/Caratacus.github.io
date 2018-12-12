@@ -1,5 +1,5 @@
-<a href="http://galio.io" style="color: #ff006e; text-decoration: underline;">Back to Galio</a>
-* [**Get Started**](/)
+<a href="https://github.com/Caratacus" style="color: #ff006e; text-decoration: underline;">Caratacus Github</a>
+* [**简介**](/)
 
   * [How to install](install.md)
 * **Components**
