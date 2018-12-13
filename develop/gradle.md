@@ -11,6 +11,7 @@ Gradle是一个基于Apache Ant和Apache Maven概念的项目自动化建构工�
 ## Gradle vs Maven
 
 ![image](https://gradle.org/images/gradle-vs-maven.gif)
+
 ## Maven项目转为Gradle
 
 ```gradle init --type pom```
