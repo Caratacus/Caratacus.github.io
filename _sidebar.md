@@ -6,6 +6,9 @@
   * [快速开始](install.md)
   * [特性](feature.md)
   * [技术选型](frameworks.md)
+* **开发手册**
+
+  * [IDE导入](import.md)
 * **FAQ**
 
   * [常见问题](questions.md)
