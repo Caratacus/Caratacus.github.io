@@ -35,9 +35,9 @@ document.ready(
     () => {
         const pagebody = document.getElementsByTagName('body')[0]
 
-        const default_theme = 'light' // 'dark'
+        const default_theme = 'dark' // 'light'
 
-        function setTheme(status = 'light') {
+        function setTheme(status = 'dark') {
             if (status === 'dark') {
                 window.sessionStorage.theme = 'dark'
                 pagebody.classList.add('dark-theme');
@@ -56,12 +56,10 @@ document.ready(
         document.getElementsByClassName('toggleBtn')[0].addEventListener('click', () => {
             window.sessionStorage.theme = window.sessionStorage.theme === 'dark' ? 'light' : 'dark'
             setTheme(window.sessionStorage.theme)
-            document.getElementById("switch_default").checked = window.sessionStorage.theme === 'light'
         })
         document.getElementById('mobile-toggle-theme').addEventListener('click', () => {
             window.sessionStorage.theme = window.sessionStorage.theme === 'dark' ? 'light' : 'dark'
             setTheme(window.sessionStorage.theme)
-            document.getElementById("mobile-toggle-theme").innerText = window.sessionStorage.theme === 'light' ? "· Light" : "· Dark"
         })
     }
 );
