@@ -58,13 +58,13 @@
                     window.sessionStorage.theme = 'dark'
                     pagebody.classList.add('dark-theme');
 
-                } else if (status === 'light') {
+                } else {
                     window.sessionStorage.theme = 'light'
                     pagebody.classList.remove('dark-theme');
                 }
             };
 
-            setTheme(window.sessionStorage.theme)
+            setTheme(window.sessionStorage.theme || 'light')
         })();
     </script>
 
@@ -146,14 +146,27 @@
                     <a class="link-item" title="Github" target="_blank" rel="noopener" href="https://github.com/Caratacus">
                         
                         
-                            <i class="iconfont icon-github"></i>
+                            
+                                <i class="iconfont icon-github"></i>
+                            
+                        
+                    </a>
+                
+                    <a class="link-item" title="Gitee" target="_blank" rel="noopener" href="https://gitee.com/cancerGit">
+                        
+                        
+                            
+                                <i class="icon-gitee-custom"></i>
+                            
                         
                     </a>
                 
                     <a class="link-item" title="Mail" href="mailto:caratcaus@gmail.com">
                         
                         
-                            <i class="iconfont icon-mail"></i>
+                            
+                                <i class="iconfont icon-mail"></i>
+                            
                         
                     </a>
                 

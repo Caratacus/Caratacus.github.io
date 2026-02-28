@@ -58,13 +58,13 @@
                     window.sessionStorage.theme = 'dark'
                     pagebody.classList.add('dark-theme');
 
-                } else if (status === 'light') {
+                } else {
                     window.sessionStorage.theme = 'light'
                     pagebody.classList.remove('dark-theme');
                 }
             };
 
-            setTheme(window.sessionStorage.theme)
+            setTheme(window.sessionStorage.theme || 'light')
         })();
     </script>
 

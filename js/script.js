@@ -35,9 +35,9 @@ document.ready(
     () => {
         const pagebody = document.getElementsByTagName('body')[0]
 
-        const default_theme = 'dark' // 'light'
+        const default_theme = 'light' // 'dark'
 
-        function setTheme(status = 'dark') {
+        function setTheme(status = 'light') {
             if (status === 'dark') {
                 window.sessionStorage.theme = 'dark'
                 pagebody.classList.add('dark-theme');
@@ -53,12 +53,22 @@ document.ready(
 
         setTheme(window.sessionStorage.theme ?? default_theme)
 
-        document.getElementsByClassName('toggleBtn')[0].addEventListener('click', () => {
-            window.sessionStorage.theme = window.sessionStorage.theme === 'dark' ? 'light' : 'dark'
-            setTheme(window.sessionStorage.theme)
+        const toggleBtn = document.getElementsByClassName('toggleBtn')[0];
+        const switchDefault = document.getElementById('switch_default');
+
+        toggleBtn.addEventListener('click', (e) => {
+            // The label click will toggle the checkbox automatically
+            // We wait for the checkbox state to change or manually manage it
+            setTimeout(() => {
+                const isDark = switchDefault.checked;
+                window.sessionStorage.theme = isDark ? 'dark' : 'light';
+                setTheme(window.sessionStorage.theme);
+            }, 0);
         })
+
         document.getElementById('mobile-toggle-theme').addEventListener('click', () => {
-            window.sessionStorage.theme = window.sessionStorage.theme === 'dark' ? 'light' : 'dark'
+            const currentTheme = window.sessionStorage.theme ?? default_theme;
+            window.sessionStorage.theme = currentTheme === 'dark' ? 'light' : 'dark'
             setTheme(window.sessionStorage.theme)
         })
     }

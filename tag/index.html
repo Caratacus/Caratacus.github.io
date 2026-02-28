@@ -58,13 +58,13 @@
                     window.sessionStorage.theme = 'dark'
                     pagebody.classList.add('dark-theme');
 
-                } else if (status === 'light') {
+                } else {
                     window.sessionStorage.theme = 'light'
                     pagebody.classList.remove('dark-theme');
                 }
             };
 
-            setTheme(window.sessionStorage.theme)
+            setTheme(window.sessionStorage.theme || 'light')
         })();
     </script>
 
@@ -147,6 +147,10 @@
                 
                     <a href="/tags/Automation/">Automation<small>(2)</small></a>
                 
+                    <a href="/tags/Spotless/">Spotless<small>(1)</small></a>
+                
+                    <a href="/tags/Git-Hooks/">Git Hooks<small>(1)</small></a>
+                
                     <a href="/tags/Spring-Boot/">Spring Boot<small>(1)</small></a>
                 
                     <a href="/tags/HikariCP/">HikariCP<small>(1)</small></a>
@@ -154,10 +158,6 @@
                     <a href="/tags/JDBC/">JDBC<small>(1)</small></a>
                 
                     <a href="/tags/MySQL/">MySQL<small>(1)</small></a>
-                
-                    <a href="/tags/Spotless/">Spotless<small>(1)</small></a>
-                
-                    <a href="/tags/Git-Hooks/">Git Hooks<small>(1)</small></a>
                 
             </div>
         </div>

@@ -58,13 +58,13 @@
                     window.sessionStorage.theme = 'dark'
                     pagebody.classList.add('dark-theme');
 
-                } else if (status === 'light') {
+                } else {
                     window.sessionStorage.theme = 'light'
                     pagebody.classList.remove('dark-theme');
                 }
             };
 
-            setTheme(window.sessionStorage.theme)
+            setTheme(window.sessionStorage.theme || 'light')
         })();
     </script>
 
@@ -131,13 +131,41 @@
     }
 </script>
             <div class="main">
-                <div class="post-wrap archive">
+                <div class="container">
+    <div class="post-wrap archive" style="padding-top: 2rem;">
+        <style>
+            #local-search-input {
+                width: 100%;
+                padding: 10px 15px;
+                margin-bottom: 2rem;
+                border: 1px solid #ddd;
+                border-radius: 20px;
+                outline: none;
+                box-sizing: border-box;
+                background: transparent;
+                color: inherit;
+                font-size: 1rem;
+                transition: border-color 0.3s;
+            }
+            #local-search-input:focus {
+                border-color: #a9a9a9;
+            }
+            .dark-theme #local-search-input {
+                border-color: #555;
+            }
+            .dark-theme #local-search-input:focus {
+                border-color: #888;
+            }
+        </style>
+        <input type="text" id="local-search-input" placeholder="Search posts..." />
+    </div>
+    <div class="post-wrap archive">
     
     
         
 
         
-            <h3>2026</h3>
+            <h3>2026 - 01</h3>
         
 
         <article class="archive-item">
@@ -147,6 +175,43 @@
     
     
 </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var searchInput = document.getElementById('local-search-input');
+        if(searchInput) {
+            searchInput.addEventListener('input', function() {
+                var filter = this.value.toLowerCase();
+                var articles = document.querySelectorAll('.archive-item');
+                
+                articles.forEach(function(article) {
+                    var title = article.querySelector('.archive-item-link').textContent.toLowerCase();
+                    if(title.indexOf(filter) > -1) {
+                        article.style.display = 'flex'; // Since it uses flexbox now
+                    } else {
+                        article.style.display = 'none';
+                    }
+                });
+                
+                // Hide year headers if no visible posts
+                var yearHeaders = document.querySelectorAll('.post-wrap.archive h3');
+                yearHeaders.forEach(function(header) {
+                    var nextEl = header.nextElementSibling;
+                    var hasVisiblePosts = false;
+                    while(nextEl && nextEl.tagName !== 'H3') {
+                        if(nextEl.classList.contains('archive-item') && nextEl.style.display !== 'none') {
+                            hasVisiblePosts = true;
+                            break;
+                        }
+                        nextEl = nextEl.nextElementSibling;
+                    }
+                    header.style.display = hasVisiblePosts ? 'block' : 'none';
+                });
+            });
+        }
+    });
+</script>
             </div>
             <footer id="footer" class="footer">
     <div class="copyright">

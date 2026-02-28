@@ -58,13 +58,13 @@
                     window.sessionStorage.theme = 'dark'
                     pagebody.classList.add('dark-theme');
 
-                } else if (status === 'light') {
+                } else {
                     window.sessionStorage.theme = 'light'
                     pagebody.classList.remove('dark-theme');
                 }
             };
 
-            setTheme(window.sessionStorage.theme)
+            setTheme(window.sessionStorage.theme || 'light')
         })();
     </script>
 
@@ -137,16 +137,25 @@
         <h2 class="post-title">About</h2>
         
         <section class="post-content">
-            <h3 id="👋-你好，我是-Caratacus"><a href="#👋-你好，我是-Caratacus" class="headerlink" title="👋 你好，我是 Caratacus"></a>👋 你好，我是 Caratacus</h3><p>一个在代码世界里修行的后端开发者。</p>
+            <h3 id="👋-你好，我是-Caratacus"><a href="#👋-你好，我是-Caratacus" class="headerlink" title="👋 你好，我是 Caratacus"></a>👋 你好，我是 Caratacus</h3><p>我是一名拥有十多年经验的后端开发工程师与架构师。在过去的职业生涯中，我曾涉足过新能源、教育、电力以及电商等多个行业领域。这些跨行业的业务场景积累，带给我丰富的系统设计与落地经验。</p>
+<p>我的技术栈主要聚焦于 Java 生态，深度使用 Spring Boot 和 Spring Cloud 进行微服务架构的设计与实践。我曾作为公司的架构负责人，主导并亲手完成了核心业务系统从 0 到 1 的搭建过程。</p>
+<p>在目前的就职公司，我主要负责核心系统的深度重构与架构升级。主导了 IoT 平台架构的重构工作，特别是核心消息流转架构的重构，使得系统能够稳定支撑 10 万级别以上的海量设备连接；同时，针对物联网场景下数据暴增的挑战，设计并落地了千亿级 IoT 设备日志的海量存储与查询解决方案，彻底解决了历史遗留的架构瓶颈。</p>
 <h3 id="🚀-关注领域"><a href="#🚀-关注领域" class="headerlink" title="🚀 关注领域"></a>🚀 关注领域</h3><ul>
-<li><strong>Java 生态</strong>: Spring Boot, JVM 调优, 高并发处理</li>
-<li><strong>工程效能</strong>: 自动化构建, Git 工作流, Spotless 等代码规范工具</li>
-<li><strong>架构思维</strong>: 领域驱动设计 (DDD), 微服务架构</li>
+<li><strong>架构与重构</strong>: 系统架构设计, 微服务架构, 系统深度重构</li>
+<li><strong>Java 生态</strong>: Spring Boot, Spring Cloud, JVM 调优, 高并发处理</li>
+<li><strong>工程效能</strong>: 自动化构建, Git 工作流, 代码质量与规范</li>
 </ul>
-<h3 id="✍️-为什么写博客"><a href="#✍️-为什么写博客" class="headerlink" title="✍️ 为什么写博客"></a>✍️ 为什么写博客</h3><p>我深信“教是最好的学”。在这个快节奏的技术迭代时代，记录和分享是沉淀知识最有效的方式。</p>
+<h3 id="💡-开源贡献"><a href="#💡-开源贡献" class="headerlink" title="💡 开源贡献"></a>💡 开源贡献</h3><p>在工作之余，我保持着对开源社区的热爱与投入。</p>
+<ul>
+<li><strong><a target="_blank" rel="noopener" href="https://github.com/baomidou/mybatis-plus">MyBatis-Plus</a></strong>: 核心参与的 MyBatis 增强工具箱，在社区内有着广泛的应用与落地。</li>
+<li><strong><a target="_blank" rel="noopener" href="https://github.com/RealKai42/qwerty-learner">Qwerty Learner</a></strong>: 参与贡献了一款为程序员设计的英语词汇与键盘肌肉记忆锻炼工具。</li>
+<li><strong><a target="_blank" rel="noopener" href="https://gitee.com/cancerGit/Crown">Crown</a></strong>: 个人开源的基于 Spring Boot 2 的企业级快速开发脚手架，沉淀了过往架构与规范的最佳实践。</li>
+</ul>
+<h3 id="✍️-为什么写博客"><a href="#✍️-为什么写博客" class="headerlink" title="✍️ 为什么写博客"></a>✍️ 为什么写博客</h3><p>写博客的初衷是为了记录自己的学习过程、踩坑经历以及技术复盘，它是我个人的技术笔记。在这个快节奏的技术迭代时代，记录和反思是沉淀知识最有效的方式。</p>
 <h3 id="📬-找到我"><a href="#📬-找到我" class="headerlink" title="📬 找到我"></a>📬 找到我</h3><ul>
 <li><strong>GitHub</strong>: <a target="_blank" rel="noopener" href="https://github.com/Caratacus">Caratacus</a></li>
-<li><strong>Email</strong>: <a href="mailto:&#x63;&#97;&#114;&#x61;&#116;&#99;&#x61;&#117;&#115;&#x40;&#x67;&#109;&#97;&#x69;&#108;&#46;&#x63;&#111;&#109;">caratcaus@gmail.com</a></li>
+<li><strong>Gitee</strong>: <a target="_blank" rel="noopener" href="https://gitee.com/cancerGit">cancerGit</a></li>
+<li><strong>Email</strong>: <a href="mailto:&#x63;&#97;&#114;&#x61;&#x74;&#x63;&#97;&#117;&#115;&#x40;&#103;&#109;&#97;&#105;&#108;&#x2e;&#99;&#111;&#109;">caratcaus@gmail.com</a></li>
 </ul>
 <hr>
 <p><em>心之所向，素履以往。</em></p>
