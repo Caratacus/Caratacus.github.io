@@ -13,7 +13,7 @@
 
 
 
-<title>告别依赖混乱：使用 Gradle Version Catalog (TOML) 优雅管理项目版本 | Caratacus&#39;s Blog</title>
+<title>使用 Gradle Version Catalog (TOML) 统一管理项目版本 | Caratacus&#39;s Blog</title>
 
 
 
@@ -203,7 +203,7 @@
     
     <article class="post-wrap">
         <header class="post-header">
-            <h1 class="post-title">告别依赖混乱：使用 Gradle Version Catalog (TOML) 优雅管理项目版本</h1>
+            <h1 class="post-title">使用 Gradle Version Catalog (TOML) 统一管理项目版本</h1>
             
                 <div class="post-meta">
                     
@@ -222,49 +222,49 @@
         </header>
 
         <div class="post-content">
-            <p>在多模块的 Gradle 项目中，随着时间的推移，依赖管理往往会演变成一场“灾难”。不同的子模块引用的第三方库版本不一致，甚至还会出现让人头疼的依赖冲突（Jar Hell）。</p>
-<p>在过去，我们可能尝试过通过 <code>ext</code> 扩展属性（或 <code>gradle.properties</code>）加字符串拼接，或是使用 <code>buildSrc</code> 编写 Kotlin 脚本来集中管理版本。但它们都有各自的缺陷（比如缺乏代码提示，或者修改一行代码就导致整个项目缓存失效重新编译）。</p>
-<p>从 Gradle 7.4 开始，官方终于给出了终极解决方案 —— <strong>Gradle Version Catalog (版本目录)</strong>，也就是大家常说的 <code>libs.versions.toml</code> 方案。今天我们就来聊聊如何丝滑地将项目迁移到这种现代化的依赖管理方式。</p>
-<h2 id="什么是-Version-Catalog？"><a href="#什么是-Version-Catalog？" class="headerlink" title="什么是 Version Catalog？"></a>什么是 Version Catalog？</h2><p>Version Catalog 允许我们将所有的版本号、依赖库坐标（GAV）以及 Gradle 插件统一声明在一个独立的 <code>.toml</code> 文件中。然后在各个模块的 <code>build.gradle</code> &#x2F; <code>build.gradle.kts</code> 中，以<strong>类型安全</strong>的方式去引用它们。</p>
-<h3 id="它带来的好处："><a href="#它带来的好处：" class="headerlink" title="它带来的好处："></a>它带来的好处：</h3><ol>
-<li><strong>统一控制源</strong>：全项目（甚至全公司跨项目）所有的依赖都在一个物理文件里，一目了然。</li>
-<li><strong>极佳的 IDE 体验</strong>：完美支持 IntelliJ IDEA 的代码补全（输个 <code>libs.</code> 提示全出来）和版本升级提示。</li>
-<li><strong>性能友好</strong>：相比 <code>buildSrc</code> 方案，修改 <code>.toml</code> 文件<strong>不会</strong>导致整个 Gradle 构建逻辑的缓存失效。</li>
-<li><strong>Bundle（依赖包）机制</strong>：可以将相关的几个库打包在一起，一键引入。</li>
+            <p>在多模块的 Gradle 项目中，随着时间的推移，依赖管理往往会变得比较复杂。我注意到不同的子模块引用的第三方库版本容易出现不一致的情况，有时还会产生依赖冲突。</p>
+<p>过去，我曾尝试过通过 <code>ext</code> 扩展属性（或 <code>gradle.properties</code>）加字符串拼接，或是使用 <code>buildSrc</code> 编写 Kotlin 脚本来集中管理版本。但它们都有一些局限性，例如缺乏代码提示，或者在 <code>buildSrc</code> 中修改一行代码会导致整个项目缓存失效重新编译。</p>
+<p>后来我了解到，从 Gradle 7.4 开始，官方引入了 <strong>Gradle Version Catalog (版本目录)</strong>（即 <code>libs.versions.toml</code>）。最近，我尝试将一个项目迁移到了这种依赖管理方式，并在此记录一下我的实践过程。</p>
+<h2 id="什么是-Version-Catalog？"><a href="#什么是-Version-Catalog？" class="headerlink" title="什么是 Version Catalog？"></a>什么是 Version Catalog？</h2><p>我的理解是，Version Catalog 允许将所有的版本号、依赖库坐标（GAV）以及 Gradle 插件统一声明在一个独立的 <code>.toml</code> 文件中。然后在各个模块的 <code>build.gradle</code> &#x2F; <code>build.gradle.kts</code> 中，可以以类型安全的方式去引用它们。</p>
+<h3 id="我观察到的优势："><a href="#我观察到的优势：" class="headerlink" title="我观察到的优势："></a>我观察到的优势：</h3><ol>
+<li><strong>统一控制源</strong>：全项目的依赖都集中在一个物理文件中，便于查阅和修改。</li>
+<li><strong>IDE 体验</strong>：较好地支持了 IntelliJ IDEA 的代码补全和版本升级提示。</li>
+<li><strong>性能友好</strong>：相比 <code>buildSrc</code> 方案，修改 <code>.toml</code> 文件通常不会导致整个 Gradle 构建逻辑的缓存失效。</li>
+<li><strong>Bundle（依赖包）机制</strong>：可以将相关的几个库打包在一起，统一引入。</li>
 </ol>
 <hr>
-<h2 id="迁移实战：四步搞定统一部署"><a href="#迁移实战：四步搞定统一部署" class="headerlink" title="迁移实战：四步搞定统一部署"></a>迁移实战：四步搞定统一部署</h2><p>假设我们有一个基于 Kotlin DSL (<code>build.gradle.kts</code>) 的 Spring Boot 多模块项目。</p>
-<h3 id="第一步：创建-libs-versions-toml"><a href="#第一步：创建-libs-versions-toml" class="headerlink" title="第一步：创建 libs.versions.toml"></a>第一步：创建 <code>libs.versions.toml</code></h3><p>在你的项目根目录下，进入（或创建） <code>gradle</code> 文件夹，新建一个名为 <code>libs.versions.toml</code> 的文件。</p>
-<p>这个文件分为四个主要区块（Table）：</p>
+<h2 id="迁移过程记录"><a href="#迁移过程记录" class="headerlink" title="迁移过程记录"></a>迁移过程记录</h2><p>我以一个基于 Kotlin DSL (<code>build.gradle.kts</code>) 的 Spring Boot 多模块项目为例，记录了我的迁移步骤。</p>
+<h3 id="第一步：创建-libs-versions-toml"><a href="#第一步：创建-libs-versions-toml" class="headerlink" title="第一步：创建 libs.versions.toml"></a>第一步：创建 <code>libs.versions.toml</code></h3><p>我在项目根目录下的 <code>gradle</code> 文件夹中，新建了一个名为 <code>libs.versions.toml</code> 的文件。</p>
+<p>这个文件主要分为四个区块：</p>
 <figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># gradle/libs.versions.toml</span></span><br><span class="line"></span><br><span class="line"><span class="section">[versions]</span></span><br><span class="line"><span class="comment"># 集中定义所有版本号</span></span><br><span class="line"><span class="attr">spring-boot</span> = <span class="string">&quot;4.0.3&quot;</span></span><br><span class="line"><span class="attr">jjwt</span> = <span class="string">&quot;0.12.3&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="section">[libraries]</span></span><br><span class="line"><span class="comment"># JWT 相关</span></span><br><span class="line"><span class="attr">jjwt-api</span> = &#123; group = <span class="string">&quot;io.jsonwebtoken&quot;</span>, name = <span class="string">&quot;jjwt-api&quot;</span>, version.ref = <span class="string">&quot;jjwt&quot;</span> &#125;</span><br><span class="line"><span class="attr">jjwt-impl</span> = &#123; group = <span class="string">&quot;io.jsonwebtoken&quot;</span>, name = <span class="string">&quot;jjwt-impl&quot;</span>, version.ref = <span class="string">&quot;jjwt&quot;</span> &#125;</span><br><span class="line"></span><br><span class="line"><span class="section">[bundles]</span></span><br><span class="line"><span class="comment"># 把经常一起出现的依赖打个包</span></span><br><span class="line"><span class="attr">jwt</span> = [<span class="string">&quot;jjwt-api&quot;</span>, <span class="string">&quot;jjwt-impl&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="section">[plugins]</span></span><br><span class="line"><span class="comment"># 定义 Gradle 插件</span></span><br><span class="line"><span class="attr">spring-boot</span> = &#123; id = <span class="string">&quot;org.springframework.boot&quot;</span>, version.ref = <span class="string">&quot;spring-boot&quot;</span> &#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="第二步：清理旧的属性定义"><a href="#第二步：清理旧的属性定义" class="headerlink" title="第二步：清理旧的属性定义"></a>第二步：清理旧的属性定义</h3><p>如果你以前在 <code>gradle.properties</code> 或者根 <code>build.gradle.kts</code> 里定义过零散的版本号（如 <code>springBootVersion=4.0.3</code>），现在可以大胆地删掉它们了。</p>
-<h3 id="第三步：改造根项目（插件声明与版本提取）"><a href="#第三步：改造根项目（插件声明与版本提取）" class="headerlink" title="第三步：改造根项目（插件声明与版本提取）"></a>第三步：改造根项目（插件声明与版本提取）</h3><p>在根目录的 <code>build.gradle.kts</code> 中，我们不再使用字符串来声明插件，而是改用 <code>alias()</code>。</p>
-<p><strong>修改前 (Before):</strong></p>
+<h3 id="第二步：清理旧的属性定义"><a href="#第二步：清理旧的属性定义" class="headerlink" title="第二步：清理旧的属性定义"></a>第二步：清理旧的属性定义</h3><p>我移除了以前在 <code>gradle.properties</code> 或者根 <code>build.gradle.kts</code> 里定义过的零散版本号（如 <code>springBootVersion=4.0.3</code>）。</p>
+<h3 id="第三步：改造根项目（插件声明与版本提取）"><a href="#第三步：改造根项目（插件声明与版本提取）" class="headerlink" title="第三步：改造根项目（插件声明与版本提取）"></a>第三步：改造根项目（插件声明与版本提取）</h3><p>在根目录的 <code>build.gradle.kts</code> 中，我将原有的字符串插件声明改为了 <code>alias()</code> 的方式。</p>
+<p><strong>修改前:</strong></p>
 <figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">plugins &#123;</span><br><span class="line">    id(<span class="string">&quot;org.springframework.boot&quot;</span>) version <span class="string">&quot;4.0.3&quot;</span> apply <span class="literal">false</span></span><br><span class="line">    id(<span class="string">&quot;com.diffplug.spotless&quot;</span>) version <span class="string">&quot;8.2.1&quot;</span> apply <span class="literal">false</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><strong>修改后 (After):</strong></p>
+<p><strong>修改后:</strong></p>
 <figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">plugins &#123;</span><br><span class="line">    alias(libs.plugins.spring.boot) apply <span class="literal">false</span></span><br><span class="line">    alias(libs.plugins.spotless) apply <span class="literal">false</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><em>注意：如果在子模块闭包 <code>subprojects { ... }</code> 中需要用到版本号，由于作用域问题，建议在闭包外提前提取出来：</em></p>
+<p><em>如果在子模块闭包 <code>subprojects { ... }</code> 中需要用到版本号，我发现可以提前在闭包外提取出来：</em></p>
 <figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 提前提取版本号供内部使用</span></span><br><span class="line"><span class="keyword">val</span> springBootVersion = libs.versions.spring.boot.<span class="keyword">get</span>()</span><br><span class="line"></span><br><span class="line">subprojects &#123;</span><br><span class="line">    <span class="comment">// 这里可以直接使用 springBootVersion</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h3 id="第四步：改造子模块依赖声明"><a href="#第四步：改造子模块依赖声明" class="headerlink" title="第四步：改造子模块依赖声明"></a>第四步：改造子模块依赖声明</h3><p>最后一步，也是最爽的一步。进入你的各个子模块，将硬编码的依赖替换为 Catalog 引用。注意在 <code>toml</code> 文件中使用的 <code>-</code>（横杠）在 Kotlin DSL 中会被自动转换为 <code>.</code>（点）。</p>
-<p><strong>修改前 (Before):</strong></p>
+<h3 id="第四步：改造子模块依赖声明"><a href="#第四步：改造子模块依赖声明" class="headerlink" title="第四步：改造子模块依赖声明"></a>第四步：改造子模块依赖声明</h3><p>进入各个子模块后，我将硬编码的依赖替换为了 Catalog 引用。我注意到在 <code>toml</code> 文件中使用的 <code>-</code>（横杠）在 Kotlin DSL 中会被自动转换为 <code>.</code>（点）。</p>
+<p><strong>修改前:</strong></p>
 <figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">    implementation(<span class="string">&quot;cn.hutool:hutool-all:5.8.34&quot;</span>)</span><br><span class="line">    implementation(<span class="string">&quot;io.jsonwebtoken:jjwt-api:0.12.3&quot;</span>)</span><br><span class="line">    implementation(<span class="string">&quot;io.jsonwebtoken:jjwt-impl:0.12.3&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p><strong>修改后 (After):</strong></p>
+<p><strong>修改后:</strong></p>
 <figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">dependencies &#123;</span><br><span class="line">    <span class="comment">// 单个依赖</span></span><br><span class="line">    implementation(libs.hutool.all)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 使用 bundle 一键引入所有 JWT 依赖</span></span><br><span class="line">    implementation(libs.bundles.jwt)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<h2 id="进阶技巧与踩坑指南"><a href="#进阶技巧与踩坑指南" class="headerlink" title="进阶技巧与踩坑指南"></a>进阶技巧与踩坑指南</h2><ol>
-<li><p><strong>与 Spring Dependency Management 的配合</strong>：<br>如果你的项目使用了 Spring 的 BOM（Bill of Materials），强烈建议 <strong>Version Catalog + BOM</strong> 组合拳。让 BOM 去管理它能管到的框架依赖（如 <code>spring-boot-starter-web</code>, <code>jackson</code>），剩余的第三方库用 <code>toml</code> 统一管理。</p>
+<h2 id="排查与学习：进阶技巧"><a href="#排查与学习：进阶技巧" class="headerlink" title="排查与学习：进阶技巧"></a>排查与学习：进阶技巧</h2><ol>
+<li><p><strong>与 Spring Dependency Management 的配合</strong>：<br>对于使用了 Spring BOM 的项目，我倾向于采用 <strong>Version Catalog + BOM</strong> 的组合。让 BOM 去管理它内置的框架依赖（如 <code>spring-boot-starter-web</code>, <code>jackson</code>），剩余的第三方库再用 <code>toml</code> 统一管理。</p>
 </li>
-<li><p><strong>命名规范</strong>：<br>在 <code>toml</code> 文件中，推荐使用短横线 <code>-</code> 分隔单词（如 <code>spring-boot</code>），Gradle 在生成访问器时会自动将其转换驼峰或点号形式（<code>libs.versions.spring.boot</code>），这样代码书写起来非常符合面向对象的直觉。</p>
+<li><p><strong>命名规范</strong>：<br>在 <code>toml</code> 文件中，我发现在命名时使用短横线 <code>-</code> 分隔单词（如 <code>spring-boot</code>）比较好，因为 Gradle 在生成访问器时会自动将其转换为点号形式（<code>libs.versions.spring.boot</code>），在代码中引用时较为自然。</p>
 </li>
-<li><p><strong>持续集成（CI）自动化升级</strong>：<br><code>toml</code> 作为标准的配置文件格式，极其容易被自动化工具解析。你可以轻松集成类似 <strong>Dependabot</strong> 或 <strong>Renovate</strong> 这样的机器人。一旦有新版本发布，机器人会自动修改 <code>.toml</code> 文件并提一个 PR，测试通过即可合并，简直是强迫症患者的福音！</p>
+<li><p><strong>自动化升级尝试</strong>：<br>由于 <code>toml</code> 是标准的配置文件格式，我尝试了将其与自动化工具（如 Dependabot 或 Renovate）结合。发现新版本发布时，工具可以直接解析并修改 <code>.toml</code> 文件，这使得依赖升级变得更加自动化。</p>
 </li>
 </ol>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>将项目迁移到 Gradle Version Catalog 是一件“低投入、高产出”的事情。初次迁移虽然需要一些体力活，但一旦完成，你将获得一个清爽、类型安全、防冲突且高度现代化的构建环境。</p>
+<h2 id="总结反思"><a href="#总结反思" class="headerlink" title="总结反思"></a>总结反思</h2><p>这次将项目迁移到 Gradle Version Catalog 的实践，帮助我更好地理解了现代 Gradle 的依赖管理机制。虽然初次迁移需要花费一些时间，但完成后确实提升了构建脚本的整洁度和类型安全性。这也提醒了我需要进一步了解 Gradle 缓存机制等更深层次的技术细节。</p>
 
         </div>
 
@@ -280,7 +280,7 @@
                     </p>
                     <p class="copyright-item">
                         <span>转载请注明来源:</span>
-                        <span>Caratacus&#39;s Blog-《告别依赖混乱：使用 Gradle Version Catalog (TOML) 优雅管理项目版本》</span>
+                        <span>Caratacus&#39;s Blog-《使用 Gradle Version Catalog (TOML) 统一管理项目版本》</span>
                     </p>
                     <p class="copyright-item">
                         <span>本文链接地址:</span>
@@ -315,7 +315,7 @@
         <section class="post-nav">
             
             
-            <a class="next" rel="next" href="/2026/02/25/java-auto-formatting-with-spotless-and-git-hooks/">基于 Spotless + Git Hook 的 Java 自动格式化方案</a>
+            <a class="next" rel="next" href="/2026/02/25/java-auto-formatting-with-spotless-and-git-hooks/">基于 Spotless + Git Hook 的 Java 代码格式化尝试</a>
             
         </section>
 

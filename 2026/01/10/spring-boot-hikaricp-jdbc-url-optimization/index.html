@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Caratacus">
+
+
+
+
+
+<title>Spring Boot HikariCP数据库连接池与 JDBC URL 深度优化 | Caratacus&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const pagebody = document.getElementsByTagName('body')[0]
+
+            function setTheme(status) {
+
+                if (status === 'dark') {
+                    window.sessionStorage.theme = 'dark'
+                    pagebody.classList.add('dark-theme');
+
+                } else if (status === 'light') {
+                    window.sessionStorage.theme = 'light'
+                    pagebody.classList.remove('dark-theme');
+                }
+            };
+
+            setTheme(window.sessionStorage.theme)
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Caratacus&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Caratacus&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">
+                    <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4.5 17.27q-.213 0-.356-.145T4 16.768t.144-.356t.356-.143h15q.213 0 .356.144q.144.144.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.144T4 11.999t.144-.356t.356-.143h15q.213 0 .356.144t.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.143Q4 7.443 4 7.23t.144-.356t.356-.143h15q.213 0 .356.144T20 7.23t-.144.356t-.356.144z"/></svg>
+                    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="m12 12.708l-5.246 5.246q-.14.14-.344.15t-.364-.15t-.16-.354t.16-.354L11.292 12L6.046 6.754q-.14-.14-.15-.344t.15-.364t.354-.16t.354.16L12 11.292l5.246-5.246q.14-.14.345-.15q.203-.01.363.15t.16.354t-.16.354L12.708 12l5.246 5.246q.14.14.15.345q.01.203-.15.363t-.354.16t-.354-.16z"/></svg>
+                </div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if (toggleMenu.classList.contains("active")) {
+            toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        } else {
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Spring Boot HikariCP数据库连接池与 JDBC URL 深度优化</h1>
+            
+                <div class="post-meta">
+                    
+
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Engineering/">Engineering</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <p>在日常的后端开发中，数据库连接池的配置往往是被使用最多但我却很少去深入研究的地方。最近，我在生产环境遇到了一个异常，在此记录一下排查和优化的过程。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">org.springframework.dao.RecoverableDataAccessException:</span><br><span class="line"></span><br><span class="line">### Error updating database. Cause: com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure</span><br><span class="line"></span><br><span class="line">The last packet successfully received from the server was 939,083 milliseconds ago. The last packet sent successfully to the server was 944,953 milliseconds ago.</span><br><span class="line"></span><br><span class="line">### The error may exist in com/abbemobility/vesta/juno/cce/module/mapper/DevicePortMapper.java (best guess)</span><br><span class="line"></span><br><span class="line">### The error may involve</span><br></pre></td></tr></table></figure>
+
+<p>日志显示连接闲置了约 900 多秒（15分钟）后断开。</p>
+<p>排查这个 900 秒断开的原因促使我重新审视了现有的 Spring Boot + HikariCP + MySQL JDBC 配置。这给了我一个深入学习底层连接机制的机会。</p>
+<hr>
+<h2 id="背景与问题排查"><a href="#背景与问题排查" class="headerlink" title="背景与问题排查"></a>背景与问题排查</h2><p>回到文章开头，连接闲置 15 分钟（约 900 秒）后准时报 <code>Communications link failure</code>，但查阅 MySQL 发现其 <code>wait_timeout</code> 为 8 小时。</p>
+<p>目前我还没找到真实原因，但是我推测可能有以下几个原因：</p>
+<ol>
+<li><p><strong>云服务商的 LB 或企业防火墙：</strong><br>应用和数据库之间如果隔着网络设备（如 Azure 的 SLB、NAT 网关或机房的硬件防火墙），这些设备通常会配置一个 TCP Session Idle Timeout。这个值有时会被设为 900 秒。如果链路 15 分钟没有数据交互，网络设备可能会直接丢弃该通道。</p>
+</li>
+<li><p><strong>数据库代理层：</strong><br>如果使用了云数据库的代理功能，真实的 MySQL <code>wait_timeout</code> 确实是 8 小时，但代理节点可能设置了 15 分钟的空闲断开规则。</p>
+</li>
+<li><p><strong>操作系统的 TCP KeepAlive 机制：</strong><br>Linux 内核的 <code>tcp_keepalive_time</code> 机制也可能介入。如果操作系统层面的 TCP 保活探测失败，内核会关闭 Socket。</p>
+</li>
+<li><p><strong>业务代码中的长事务：</strong><br>如果在代码逻辑中开启了事务（获取了连接），随后执行了一个耗时的外部调用，期间底层 TCP 已经被网络设备切断。当代码继续执行 SQL 时，就会抛出异常。</p>
+</li>
+</ol>
+<p>为了应对这些不可控的网络断连问题，我决定调整 JDBC URL 和 HikariCP 的参数。</p>
+<hr>
+<h2 id="JDBC-URL-优化与-HikariCP-配置优化"><a href="#JDBC-URL-优化与-HikariCP-配置优化" class="headerlink" title="JDBC URL 优化与 HikariCP 配置优化"></a>JDBC URL 优化与 HikariCP 配置优化</h2><h3 id="1-调整-JDBC-URL"><a href="#1-调整-JDBC-URL" class="headerlink" title="1. 调整 JDBC URL"></a>1. 调整 JDBC URL</h3><p>我发现底层 MySQL 驱动（Connector&#x2F;J）的参数同样重要。以下是我调整后的 JDBC URL：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">datasource:</span></span><br><span class="line">    <span class="attr">url:</span> <span class="string">jdbc:mysql://localhost:3306/my_db?tinyInt1isBit=false&amp;characterEncoding=utf8mb4&amp;zeroDateTimeBehavior=convertToNull&amp;serverTimezone=UTC&amp;enabledTLSProtocols=TLSv1.2&amp;sessionVariables=transaction_isolation=&#x27;READ-COMMITTED&#x27;&amp;connectTimeout=5000&amp;socketTimeout=15000</span></span><br><span class="line">    <span class="attr">username:</span> <span class="string">caratacus</span></span><br><span class="line">    <span class="attr">password:</span> <span class="string">caratacus</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>移除 <code>autoReconnect=true</code>：</strong><br>我了解到，如果网络发生闪断，底层驱动自动重连成功后，之前的事务上下文（Transaction Context）、临时表等会话状态可能会丢失。这可能导致后续的 SQL 脱离事务执行。因此，我发现依赖连接池来处理断连（发现连接不可用 -&gt; 抛出异常 -&gt; 从池中获取新连接）是更合理的做法，这样可以保持事务边界的清晰。</li>
+<li><strong>增加网络超时机制：</strong><br>为了避免应用线程长时间等待数据库响应，我加上了以下参数：<ul>
+<li><code>connectTimeout=5000</code>：建立初始连接的超时时间设置为 5 秒。</li>
+<li><code>socketTimeout=15000</code>：发送 SQL 后等待数据库响应的超时时间设置为 15 秒。</li>
+</ul>
+</li>
+<li><strong>其他参数：</strong><ul>
+<li><code>sessionVariables=transaction_isolation=&#39;READ-COMMITTED&#39;</code>：将当前会话的隔离级别设置为读已提交。</li>
+<li><code>zeroDateTimeBehavior=convertToNull</code>：遇到非法的脏时间数据时，映射为 Java 的 <code>null</code>。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-优化-HikariCP-配置"><a href="#2-优化-HikariCP-配置" class="headerlink" title="2. 优化 HikariCP 配置"></a>2. 优化 HikariCP 配置</h3><p>在观察 HikariCP 时，我注意到过短的 <code>max-lifetime</code> 会导致应用频繁地和 MySQL 建立连接。为了应对复杂的网络环境，我引入了心跳保活（Keepalive）策略，配置如下：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">datasource:</span></span><br><span class="line">    <span class="attr">hikari:</span></span><br><span class="line">      <span class="attr">maximum-pool-size:</span> <span class="number">16</span></span><br><span class="line">      <span class="attr">minimum-idle:</span> <span class="number">4</span>           </span><br><span class="line">      <span class="comment"># 放宽生命周期（30分钟）</span></span><br><span class="line">      <span class="attr">max-lifetime:</span> <span class="number">1800000</span>     </span><br><span class="line">      <span class="comment"># 空闲超时（10分钟）</span></span><br><span class="line">      <span class="attr">idle-timeout:</span> <span class="number">600000</span>      </span><br><span class="line">      <span class="comment"># 主动探活（5分钟）</span></span><br><span class="line">      <span class="attr">keepalive-time:</span> <span class="number">300000</span></span><br><span class="line">      <span class="attr">connection-timeout:</span> <span class="number">5000</span></span><br><span class="line">      <span class="attr">validation-timeout:</span> <span class="number">3000</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><code>max-lifetime</code>：连接的最大生命周期。</li>
+<li><code>idle-timeout</code>：连接池中空闲连接的最大存活时间。我确认这个值需要小于 MySQL 服务器的 <code>wait_timeout</code>（可通过 <code>show variables like &#39;wait_timeout&#39;;</code> 查看）。</li>
+<li><code>keepalive-time</code>：通过配置这个参数，连接池能主动维持 TCP 链路的活跃状态，向 MySQL 发送探活包。这有助于解决连接闲置太久被网络设备断开的问题。</li>
+</ul>
+<hr>
+<h2 id="总结与反思"><a href="#总结与反思" class="headerlink" title="总结与反思"></a>总结与反思</h2><p>这次排查帮助我更好地理解了底层网络连接机制以及连接池的工作原理。通过调整 JDBC <code>socketTimeout</code> 和 HikariCP <code>keepalive-time</code> 等参数，我发现可以更稳定地管理数据库连接，减少网络环境带来的影响。这也提醒了我，在配置基础设施参数时，需要更深入地了解其背后的原理和潜在的副作用。</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                <div class="post-copyright-avatar">
+                    <img src="/image/avatar.jpeg" alt="avatar">
+                </div>
+                <div class="post-copyright-info">
+                    <p class="copyright-item">
+                        <span>说明:</span>
+                        <span>本站点博文除特殊说明转载自xxx外，均为博主原创内容</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>转载请注明来源:</span>
+                        <span>Caratacus&#39;s Blog-《Spring Boot HikariCP数据库连接池与 JDBC URL 深度优化》</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>本文链接地址:</span>
+                        <span><a href="https://caratacus.github.io/2026/01/10/spring-boot-hikaricp-jdbc-url-optimization/">https://caratacus.github.io/2026/01/10/spring-boot-hikaricp-jdbc-url-optimization/</a></span>
+                    </p>
+                </div>
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Spring-Boot/"># Spring Boot</a>
+                    
+                        <a href="/tags/HikariCP/"># HikariCP</a>
+                    
+                        <a href="/tags/JDBC/"># JDBC</a>
+                    
+                        <a href="/tags/MySQL/"># MySQL</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+                <a class="prev" rel="prev" href="/2026/02/25/java-auto-formatting-with-spotless-and-git-hooks/">基于 Spotless + Git Hook 的 Java 代码格式化尝试</a>
+            
+            
+        </section>
+
+
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© <a href="https://github.com/Caratacus" target="_blank">Caratacus</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
