@@ -668,6 +668,10 @@ header .menu label {
   transition-property: transform, color;
   transition-timing-function: ease-out;
   animation: floating 4s ease-in-out infinite;
+  color: #161209;
+}
+.dark-theme .tag-cloud-tags a {
+  color: #a9a9b3;
 }
 .tag-cloud-tags a:nth-child(2n) {
   animation-duration: 5s;
