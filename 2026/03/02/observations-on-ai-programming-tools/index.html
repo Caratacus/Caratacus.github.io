@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Caratacus">
+
+
+
+
+
+<title>当Claude Code来敲门：AI狂飙时代，一个Java开发者的迷茫与重塑 | Caratacus&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const pagebody = document.getElementsByTagName('body')[0]
+
+            function setTheme(status) {
+
+                if (status === 'dark') {
+                    window.sessionStorage.theme = 'dark'
+                    pagebody.classList.add('dark-theme');
+
+                } else {
+                    window.sessionStorage.theme = 'light'
+                    pagebody.classList.remove('dark-theme');
+                }
+            };
+
+            setTheme(window.sessionStorage.theme || 'light')
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Caratacus&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Caratacus&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">
+                    <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4.5 17.27q-.213 0-.356-.145T4 16.768t.144-.356t.356-.143h15q.213 0 .356.144q.144.144.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.144T4 11.999t.144-.356t.356-.143h15q.213 0 .356.144t.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.143Q4 7.443 4 7.23t.144-.356t.356-.143h15q.213 0 .356.144T20 7.23t-.144.356t-.356.144z"/></svg>
+                    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="m12 12.708l-5.246 5.246q-.14.14-.344.15t-.364-.15t-.16-.354t.16-.354L11.292 12L6.046 6.754q-.14-.14-.15-.344t.15-.364t.354-.16t.354.16L12 11.292l5.246-5.246q.14-.14.345-.15q.203-.01.363.15t.16.354t-.16.354L12.708 12l5.246 5.246q.14.14.15.345q.01.203-.15.363t-.354.16t-.354-.16z"/></svg>
+                </div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if (toggleMenu.classList.contains("active")) {
+            toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        } else {
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">当Claude Code来敲门：AI狂飙时代，一个Java开发者的迷茫与重塑</h1>
+            
+                <div class="post-meta">
+                    
+
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/%E9%9A%8F%E7%AC%94/">随笔</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <p>最近，各类 Claude Code &#x2F; Codex &#x2F; Gemini CLI 的发布在技术圈刷了屏。作为一个在 Java 领域摸爬滚打多年的码农，看着屏幕上 AI 以远超人类的速度和准确度生成、重构甚至自动修复代码，我必须承认，我感到了前所未有的焦虑和迷茫。</p>
+<p>“工作会被取代吗？”<br>“后续需要这么多开发吗？”<br>“过去几年积累的增删改查、框架调优经验，还有价值吗？”</p>
+<p>这些问题反复萦绕在我的脑海。在这个技术范式发生剧变的十字路口，我决定重新打理这个沉寂了一段时间的博客，权当是给自己的一场“复盘”，也希望能给同样处于迷茫中的同行们一点启发。</p>
+<h2 id="技术的倒逼：“手写代码”不再是核心护城河"><a href="#技术的倒逼：“手写代码”不再是核心护城河" class="headerlink" title="技术的倒逼：“手写代码”不再是核心护城河"></a>技术的倒逼：“手写代码”不再是核心护城河</h2><p>回想我在构建 <strong>Crown</strong> 这个基于 Spring Boot 的 Web 脚手架时，我写下了一句愿景：<strong>“用最简单的代码写最复杂的业务。”</strong> 当时的我，致力于通过封装、抽取公共组件、使用各类工具（比如 Lombok、MyBatis-Plus）来减少繁琐的样板代码（Boilerplate Code）。而今天，AI 把这件事情做到了极致。对于很多标准化的需求，AI 可以在几秒钟内生成完整的 Controller、Service、Mapper 和 Entity。</p>
+<p>这意味着，单纯以“熟练记忆 API”、“手写代码速度快”为傲的时代结束了。AI 成了那个最不知疲倦、精通全栈的“结对编程”伙伴。如果我们的定位仅仅是一个“把需求文档翻译成 Java 语法”的工具人，那危机确实已经近在咫尺。</p>
+<h2 id="十余年经验的馈赠：在-AI-时代保持判断力"><a href="#十余年经验的馈赠：在-AI-时代保持判断力" class="headerlink" title="十余年经验的馈赠：在 AI 时代保持判断力"></a>十余年经验的馈赠：在 AI 时代保持判断力</h2><p>回过头看，我感到庆幸的是，在 AI 时代来临之前，我已经经历了长达十多年的开发经验。这段经历给我带来的最大财富，不是掌握了多少框架或语法，而是让我对“什么是好的代码”、“什么是合理的架构”、“这个方案靠不靠谱”有了自己的判断力。</p>
+<p>AI 可以快速生成代码，但它生成的代码好不好、适不适合当前场景、会不会埋下隐患——这些问题，需要有人来判断。而这种判断力，是在无数次踩坑、无数次重构、无数次深夜排查线上问题中慢慢积累起来的。</p>
+<p>就像品尝一道菜，AI 可以按菜谱做出一道菜，但这道菜咸淡是否合适、火候是否到位、是否符合食客的口味——这些需要经验丰富的厨师来把关。十多年的开发经历，让我从一个只会照着菜谱做菜的学徒，逐渐成长为能够品评菜品、调整配方的人。这是 AI 目前无法取代的。</p>
+<h2 id="破局之道：寻找-AI-无法取代的“复杂性”"><a href="#破局之道：寻找-AI-无法取代的“复杂性”" class="headerlink" title="破局之道：寻找 AI 无法取代的“复杂性”"></a>破局之道：寻找 AI 无法取代的“复杂性”</h2><p>迷茫过后，我开始重新审视自己的核心价值。AI 能够写出语法正确的代码，但它无法独立完成以下事情：</p>
+<ul>
+<li><p><strong>真正的业务抽象与领域建模：</strong> AI 不知道现实世界中企业的组织架构是如何运转的，不知道财务系统的账期逻辑有哪些潜规则。Java 擅长的是构建复杂的大型企业级应用，未来的核心竞争力在于 <strong>Domain-Driven Design (DDD)</strong> 和将模糊的商业需求转化为清晰的系统模型的能力。</p>
+</li>
+<li><p><strong>架构的权衡与演进：</strong> 高并发场景下的组件选型、微服务的边界划分、分布式事务的处理、系统可用性的保障。这些需要结合团队现状、成本和业务体量进行的“Trade-off（权衡）”，是目前 AI 无法越俎代庖的。</p>
+</li>
+<li><p><strong>屎山代码的治理与历史包袱的兼容：</strong> 现实中的工程往往不是从零开始的。如何在一个运行了五年、逻辑盘根错节的旧系统中安全地加入新功能？这需要极强的排错能力和工程直觉。</p>
+</li>
+</ul>
+<h2 id="我的行动指南：Learn-and-live"><a href="#我的行动指南：Learn-and-live" class="headerlink" title="我的行动指南：Learn and live"></a>我的行动指南：Learn and live</h2><p>面对 AI，抗拒是徒劳的，拥抱才是出路。在接下来的时间里，我给自己的职业发展定下了几个新的基调：</p>
+<p><strong>让 AI 成为我效率提升的工具。</strong></p>
+<p>不再把时间花在手写重复代码上，而是把 Claude &#x2F; ChatGPT 融入日常开发工作流。我需要从“代码编写者”转型为“代码审查者（Reviewer）”。借助 AI 提升编码效率，从而腾出时间去做更有价值的事。</p>
+<p><strong>行业深耕，深入业务</strong></p>
+<p>比 AI 更懂业务（成为技术与产品的桥梁），设计出适合当前场景的解决方案，做出正确的决策。</p>
+<p><strong>重启写作，记录真实的经验与思考。</strong></p>
+<p>这也是我更新这篇博客的初衷。AI 时代，信息唾手可得，但“个人的真实经验、踩坑记录和系统思考”变得无比稀缺。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>技术更迭的浪潮从未停止，工具在变，但解决问题的本质没有变。</p>
+<p>学会学习，用力生活。这不仅是写代码的哲学，也是我们在 AI 狂飙的时代，保持清醒与定力的唯一途径。</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                <div class="post-copyright-avatar">
+                    <img src="/image/avatar.jpeg" alt="avatar">
+                </div>
+                <div class="post-copyright-info">
+                    <p class="copyright-item">
+                        <span>说明:</span>
+                        <span>本站点博文除特殊说明转载自xxx外，均为博主原创内容</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>转载请注明来源:</span>
+                        <span>Caratacus&#39;s Blog-《当Claude Code来敲门：AI狂飙时代，一个Java开发者的迷茫与重塑》</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>本文链接地址:</span>
+                        <span><a href="https://caratacus.github.io/2026/03/02/observations-on-ai-programming-tools/">https://caratacus.github.io/2026/03/02/observations-on-ai-programming-tools/</a></span>
+                    </p>
+                </div>
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Java/"># Java</a>
+                    
+                        <a href="/tags/AI/"># AI</a>
+                    
+                        <a href="/tags/%E8%81%8C%E4%B8%9A%E6%80%9D%E8%80%83/"># 职业思考</a>
+                    
+                        <a href="/tags/Claude-Code/"># Claude Code</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2026/03/02/openclaw-discord-network-issue-mac/">记录在 Mac 环境下部署 OpenClaw 并连接 Discord 的排障过程</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© <a href="https://github.com/Caratacus" target="_blank">Caratacus</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
