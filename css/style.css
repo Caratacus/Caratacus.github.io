@@ -654,26 +654,53 @@ header .menu label {
 .tag-cloud-tags {
   margin: 10px 0;
   padding-top: 2em;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
 }
 .tag-cloud-tags a {
   display: inline-block;
   position: relative;
-  margin: 5px 10px;
   word-wrap: break-word;
   transition-duration: 0.3s;
-  transition-property: transform;
+  transition-property: transform, color;
   transition-timing-function: ease-out;
+  animation: floating 4s ease-in-out infinite;
+}
+.tag-cloud-tags a:nth-child(2n) {
+  animation-duration: 5s;
+  animation-delay: 0.5s;
+  margin-top: 15px;
+}
+.tag-cloud-tags a:nth-child(3n) {
+  animation-duration: 4.5s;
+  animation-delay: 1s;
+  margin-bottom: 20px;
+}
+.tag-cloud-tags a:nth-child(4n) {
+  animation-duration: 6s;
+  animation-delay: 0.2s;
+  margin-top: -10px;
+}
+.tag-cloud-tags a:nth-child(5n) {
+  animation-duration: 5.5s;
+  animation-delay: 1.5s;
+  margin-bottom: -15px;
 }
 .tag-cloud-tags a:active,
 .tag-cloud-tags a:focus,
 .tag-cloud-tags a:hover {
-  color: #2d96bd;
-  transform: scale(1.1);
+  color: #2d96bd !important;
+  transform: scale(1.1) translateY(-10px) !important;
+  animation-play-state: paused;
+  z-index: 10;
 }
 .dark-theme .tag-cloud-tags a:active,
 .dark-theme .tag-cloud-tags a:focus,
 .dark-theme .tag-cloud-tags a:hover {
-  color: #fff;
+  color: #fff !important;
 }
 .tag-cloud-tags a small {
   margin: 0 0.3em;
@@ -681,6 +708,50 @@ header .menu label {
 }
 .dark-theme .tag-cloud-tags a small {
   color: #fff;
+}
+@-moz-keyframes floating {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+@-webkit-keyframes floating {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+@-o-keyframes floating {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+}
+@keyframes floating {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
 }
 .page {
   padding-top: 0;
