@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Caratacus">
+
+
+
+
+
+<title>记录在 Mac 环境下部署 OpenClaw 并连接 Discord 的排障过程 | Caratacus&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const pagebody = document.getElementsByTagName('body')[0]
+
+            function setTheme(status) {
+
+                if (status === 'dark') {
+                    window.sessionStorage.theme = 'dark'
+                    pagebody.classList.add('dark-theme');
+
+                } else {
+                    window.sessionStorage.theme = 'light'
+                    pagebody.classList.remove('dark-theme');
+                }
+            };
+
+            setTheme(window.sessionStorage.theme || 'light')
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Caratacus&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Caratacus&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">
+                    <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4.5 17.27q-.213 0-.356-.145T4 16.768t.144-.356t.356-.143h15q.213 0 .356.144q.144.144.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.144T4 11.999t.144-.356t.356-.143h15q.213 0 .356.144t.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.143Q4 7.443 4 7.23t.144-.356t.356-.143h15q.213 0 .356.144T20 7.23t-.144.356t-.356.144z"/></svg>
+                    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="m12 12.708l-5.246 5.246q-.14.14-.344.15t-.364-.15t-.16-.354t.16-.354L11.292 12L6.046 6.754q-.14-.14-.15-.344t.15-.364t.354-.16t.354.16L12 11.292l5.246-5.246q.14-.14.345-.15q.203-.01.363.15t.16.354t-.16.354L12.708 12l5.246 5.246q.14.14.15.345q.01.203-.15.363t-.354.16t-.354-.16z"/></svg>
+                </div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if (toggleMenu.classList.contains("active")) {
+            toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        } else {
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">记录在 Mac 环境下部署 OpenClaw 并连接 Discord 的排障过程</h1>
+            
+                <div class="post-meta">
+                    
+
+                    
+                    
+                        <span class="post-category">
+                    Category:
+                            
+                                <a href="/categories/Troubleshooting/">Troubleshooting</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <p>最近，我在 Mac 环境下尝试使用 OpenClaw 运行 Discord 相关功能时，遇到了一系列网络连接与配置问题。起初，当我在终端中启动 OpenClaw 并尝试连接到 Discord 时，程序一直卡在连接阶段，随后在日志中输出了类似 “Gateway Timeout” 的连接超时错误。</p>
+<p>经过初步检查，我意识到由于国内的网络环境限制，OpenClaw 在尝试与 Discord Gateway（WebSocket）建立连接时，可能遇到了直接的连通性障碍。在此记录一下我逐步排查并解决这些问题的过程。</p>
+<h2 id="排查与学习：网络代理机制"><a href="#排查与学习：网络代理机制" class="headerlink" title="排查与学习：网络代理机制"></a>排查与学习：网络代理机制</h2><p>为了弄清楚问题的根本原因，我查阅了一些资料并进行了测试。</p>
+<p>我的理解是：虽然我的 macOS 上已经运行了代理软件（例如 ClashX 或 Surge），但在终端中直接设置全局环境变量（如 <code>HTTP_PROXY</code> 和 <code>HTTPS_PROXY</code>）有时对某些特定的命令行工具或基于 WebSocket 的长连接并不完全生效。</p>
+<p>这给了我一个重新学习类 Unix 系统网络代理机制的机会。在查阅资料的过程中，<code>proxychains</code> 工具吸引了我的注意。它的原理是通过动态链接库注入（macOS 上的 <code>DYLD_INSERT_LIBRARIES</code> 机制）来 hook 程序的网络请求，从而强制指定的命令或进程走代理通道。在 macOS 上，虽然系统完整性保护（SIP）会限制其对系统自带程序的生效，但对于像 OpenClaw 这样由用户自行安装的第三方程序，它依然是有效的。</p>
+<h2 id="尝试与方案"><a href="#尝试与方案" class="headerlink" title="尝试与方案"></a>尝试与方案</h2><p>基于上述理解，我尝试通过配置 Proxychains 来解决基础的网络连通性问题，并随后解决了一系列附带的配置问题。以下是我执行的具体操作：</p>
+<h3 id="1-配置-Proxychains-代理"><a href="#1-配置-Proxychains-代理" class="headerlink" title="1. 配置 Proxychains 代理"></a>1. 配置 Proxychains 代理</h3><p>首先，我通过 Homebrew 安装了适用于 macOS 的 <code>proxychains-ng</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install proxychains-ng</span><br></pre></td></tr></table></figure>
+
+<p>接着，我修改了 Proxychains 的配置文件。在 Apple Silicon 的 Mac 上，这个文件通常位于 <code>/opt/homebrew/etc/proxychains.conf</code>。</p>
+<p>如果不确定路径，可以通过 <code>find / -name proxychains.conf 2&gt;/dev/null</code> 来查找。</p>
+<p>在配置文件的最末尾 <code>[ProxyList]</code> 部分，我将默认的 Tor 代理替换为了本地代理软件的地址和端口。这里我使用的是本地的 7897 端口（推荐使用 SOCKS5）：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[ProxyList]</span><br><span class="line"># socks4  127.0.0.1 9050  &lt;-- 注释掉或删掉这行默认的</span><br><span class="line">socks5  127.0.0.1  7897   &lt;-- 加上这行</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-使用-Proxychains-启动并处理后台守护进程"><a href="#2-使用-Proxychains-启动并处理后台守护进程" class="headerlink" title="2. 使用 Proxychains 启动并处理后台守护进程"></a>2. 使用 Proxychains 启动并处理后台守护进程</h3><p>配置完成后，运行以下命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">proxychains4 openclaw gateway start</span><br></pre></td></tr></table></figure>
+
+<p>如果 OpenClaw 是作为后台守护进程运行的（例如通过 launchd），还可以修改对应的 plist 文件 <code>~/Library/LaunchAgents/ai.openclaw.gateway.plist</code>。</p>
+<p>在 <code>&lt;key&gt;ProgramArguments&lt;/key&gt;</code> 下的 <code>&lt;array&gt;</code> 中，我将 <code>proxychains4</code> 的执行路径加在了原启动命令的最前面：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">key</span>&gt;</span>ProgramArguments<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">array</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">string</span>&gt;</span>/opt/homebrew/bin/proxychains4<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">string</span>&gt;</span>/opt/homebrew/Cellar/node/25.6.1_1/bin/node<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">string</span>&gt;</span>/opt/homebrew/lib/node_modules/openclaw/dist/index.js<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">string</span>&gt;</span>gateway<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">string</span>&gt;</span>--port<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">string</span>&gt;</span>18789<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">array</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><em>(注意：通过 <code>where proxychains4</code> 确认了电脑上 <code>proxychains4</code> 的真实绝对路径，通常 Homebrew 安装的是在 <code>/opt/homebrew/bin/</code> 或 <code>/usr/local/bin/</code> 下。)</em></p>
+<p>配置完成后，运行以下命令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openclaw gateway start</span><br></pre></td></tr></table></figure>
+
+<p>运行之后，控制台正确输出了代理链的连接日志，OpenClaw 成功连上了 Discord 的 Gateway。</p>
+<h3 id="3-解决-Discord-报错-4014"><a href="#3-解决-Discord-报错-4014" class="headerlink" title="3. 解决 Discord 报错 4014"></a>3. 解决 Discord 报错 4014</h3><p>网络通了之后，终端里突然抛出了 4014 错误 (<code>missing privileged gateway intents</code>)。</p>
+<p>通过查阅文档，我了解到这是因为机器人在试图读取消息时，没有获得 Discord 官方的“特权意图”许可。<br>解决办法是前往 <a target="_blank" rel="noopener" href="https://discord.com/developers/applications">Discord Developer Portal</a>，选中对应的 Bot，在左侧菜单点击 <code>Bot</code>，向下滚动找到 <code>Privileged Gateway Intents</code>，并将 <code>Presence</code>, <code>Server Members</code>, <code>Message Content</code> 这三个开关全部打开并保存。</p>
+<h3 id="4-解决-OpenClaw-提示-“access-not-configured”"><a href="#4-解决-OpenClaw-提示-“access-not-configured”" class="headerlink" title="4. 解决 OpenClaw 提示 “access not configured”"></a>4. 解决 OpenClaw 提示 “access not configured”</h3><p>随后，当我尝试给机器人发消息时，终端提示：<code>Ask the bot owner to approve with: openclaw pairing approve discord xxx</code>。</p>
+<p>这是 OpenClaw 的白名单保护机制。只需在<strong>另一个新的终端窗口</strong>里，复制它提示的命令执行一下，将自己的 Discord ID 加入白名单即可：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openclaw pairing approve discord 你的Pairing_code</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/2026/03/6a02d451-57af-4851-851c-9f09cc6c2db1.png" alt="OpenClaw Pairing Approve"></p>
+<p><em>(顺便提一句 <code>OpenClaw</code> 的本地配置文件其实藏在隐藏目录 <code>~/.openclaw/openclaw.json</code> 里，这在后续排查中也提供了一些线索。)</em></p>
+<h3 id="5-解决第三方-AI-API-无法调用的问题"><a href="#5-解决第三方-AI-API-无法调用的问题" class="headerlink" title="5. 解决第三方 AI API 无法调用的问题"></a>5. 解决第三方 AI API 无法调用的问题</h3><p>解决了 Discord 的连通性后，我发现虽然 Discord 功能正常，但第三方 AI 的 API 却无法调用成功。</p>
+<p><img src="/images/2026/03/14cf5888-32de-4ef7-a0f9-697131cc7fba.png" alt="API Call Failed"></p>
+<p>经过排查，在 <code>~/Library/LaunchAgents/ai.openclaw.gateway.plist</code> 中存在多余的环境变量配置，这些环境变量可能干扰了 Node.js 进程对第三方 API 的直连请求：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">key</span>&gt;</span>http_proxy<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">string</span>&gt;</span>http://127.0.0.1:7897<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">key</span>&gt;</span>https_proxy<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">string</span>&gt;</span>http://127.0.0.1:7897<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">key</span>&gt;</span>all_proxy<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">string</span>&gt;</span>socks5://127.0.0.1:7897<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>我将这些环境变量配置删除后，第三方 API 的调用恢复了正常。</p>
+<p><img src="/images/2026/03/7633f172-fe82-4f52-aa91-e16babdfd7c6.png" alt="Remove Proxy Env from Plist"></p>
+<p>修改完成后，我执行了 <code>openclaw gateway restart</code> 来重启网关服务，确保所有配置生效。</p>
+<h2 id="总结与反思"><a href="#总结与反思" class="headerlink" title="总结与反思"></a>总结与反思</h2><p>这次排查帮助我更好地理解了 macOS 下网络交互的差异以及守护进程（launchd）的配置细节。以前的我会经常依赖于设置全局的环境变量来解决代理问题，但这次经历让我认识到，对于复杂的网络协议，结合 <code>Proxychains</code> 进行进程级别的强制代理，同时清理可能引起冲突的全局环境变量，是一个更加精细且可靠的排障方向。</p>
+<p>这也提醒了我，在处理涉及多个网络链路（如同时连接 Discord WebSocket 和第三方 REST API）的复杂应用时，需要更仔细地梳理每一层网络请求的走向，避免产生意料之外的代理拦截。</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                <div class="post-copyright-avatar">
+                    <img src="/image/avatar.jpeg" alt="avatar">
+                </div>
+                <div class="post-copyright-info">
+                    <p class="copyright-item">
+                        <span>说明:</span>
+                        <span>本站点博文除特殊说明转载自xxx外，均为博主原创内容</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>转载请注明来源:</span>
+                        <span>Caratacus&#39;s Blog-《记录在 Mac 环境下部署 OpenClaw 并连接 Discord 的排障过程》</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>本文链接地址:</span>
+                        <span><a href="https://caratacus.github.io/2026/03/02/openclaw-discord-network-issue-mac/">https://caratacus.github.io/2026/03/02/openclaw-discord-network-issue-mac/</a></span>
+                    </p>
+                </div>
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span>Tag(s):</span>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/macOS/"># macOS</a>
+                    
+                        <a href="/tags/Proxychains/"># Proxychains</a>
+                    
+                        <a href="/tags/Discord/"># Discord</a>
+                    
+                        <a href="/tags/OpenClaw/"># OpenClaw</a>
+                    
+                        <a href="/tags/Network/"># Network</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2026/02/27/gradle-version-catalog-migration/">使用 Gradle Version Catalog (TOML) 统一管理项目版本</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© <a href="https://github.com/Caratacus" target="_blank">Caratacus</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>

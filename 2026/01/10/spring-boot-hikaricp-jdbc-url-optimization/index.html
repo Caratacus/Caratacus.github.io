@@ -222,14 +222,14 @@
         </header>
 
         <div class="post-content">
-            <p>在日常的后端开发中，数据库连接池的配置往往是被使用最多但我却很少去深入研究的地方。最近，我在生产环境遇到了一个异常，在此记录一下排查和优化的过程。</p>
+            <p>在日常的后端开发中，数据库连接池的配置往往是被使用最多但我却很少去深入研究的地方。最近，我在生产环境遇到了一个异常：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">org.springframework.dao.RecoverableDataAccessException:</span><br><span class="line"></span><br><span class="line">### Error updating database. Cause: com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure</span><br><span class="line"></span><br><span class="line">The last packet successfully received from the server was 939,083 milliseconds ago. The last packet sent successfully to the server was 944,953 milliseconds ago.</span><br><span class="line"></span><br><span class="line">### The error may exist in com/abbemobility/vesta/juno/cce/module/mapper/DevicePortMapper.java (best guess)</span><br><span class="line"></span><br><span class="line">### The error may involve</span><br></pre></td></tr></table></figure>
 
 <p>日志显示连接闲置了约 900 多秒（15分钟）后断开。</p>
-<p>排查这个 900 秒断开的原因促使我重新审视了现有的 Spring Boot + HikariCP + MySQL JDBC 配置。这给了我一个深入学习底层连接机制的机会。</p>
+<p>虽然关于这个 <code>Communications link failure</code> 异常，目前我还没查到具体的真实原因，但是通过这次事件，我重新审视了项目里之前的数据库连接与数据库连接池相关配置，并对它们进行了一次全面的优化。</p>
 <hr>
-<h2 id="背景与问题排查"><a href="#背景与问题排查" class="headerlink" title="背景与问题排查"></a>背景与问题排查</h2><p>回到文章开头，连接闲置 15 分钟（约 900 秒）后准时报 <code>Communications link failure</code>，但查阅 MySQL 发现其 <code>wait_timeout</code> 为 8 小时。</p>
-<p>目前我还没找到真实原因，但是我推测可能有以下几个原因：</p>
+<h2 id="问题现象与可能的原因猜想"><a href="#问题现象与可能的原因猜想" class="headerlink" title="问题现象与可能的原因猜想"></a>问题现象与可能的原因猜想</h2><p>如上所述，连接在闲置 15 分钟（约 900 秒）后准时报 <code>Communications link failure</code>，但查阅 MySQL 发现其 <code>wait_timeout</code> 配置的其实是 8 小时。</p>
+<p>虽然还没定位到确切的根因，但我推测可能有以下几个方向：</p>
 <ol>
 <li><p><strong>云服务商的 LB 或企业防火墙：</strong><br>应用和数据库之间如果隔着网络设备（如 Azure 的 SLB、NAT 网关或机房的硬件防火墙），这些设备通常会配置一个 TCP Session Idle Timeout。这个值有时会被设为 900 秒。如果链路 15 分钟没有数据交互，网络设备可能会直接丢弃该通道。</p>
 </li>
@@ -240,7 +240,7 @@
 <li><p><strong>业务代码中的长事务：</strong><br>如果在代码逻辑中开启了事务（获取了连接），随后执行了一个耗时的外部调用，期间底层 TCP 已经被网络设备切断。当代码继续执行 SQL 时，就会抛出异常。</p>
 </li>
 </ol>
-<p>为了应对这些不可控的网络断连问题，我决定调整 JDBC URL 和 HikariCP 的参数。</p>
+<p>既然难以干预外部复杂的网络环境，为了提高应用应对这类不可控断连异常的健壮性（即尽量避免应用层获取到已经失效的死连接），我决定从连接探活和超时控制等方面入手，对 JDBC URL 和 HikariCP 的参数进行了重新梳理与优化。</p>
 <hr>
 <h2 id="JDBC-URL-优化与-HikariCP-配置优化"><a href="#JDBC-URL-优化与-HikariCP-配置优化" class="headerlink" title="JDBC URL 优化与 HikariCP 配置优化"></a>JDBC URL 优化与 HikariCP 配置优化</h2><h3 id="1-调整-JDBC-URL"><a href="#1-调整-JDBC-URL" class="headerlink" title="1. 调整 JDBC URL"></a>1. 调整 JDBC URL</h3><p>我发现底层 MySQL 驱动（Connector&#x2F;J）的参数同样重要。以下是我调整后的 JDBC URL：</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">datasource:</span></span><br><span class="line">    <span class="attr">url:</span> <span class="string">jdbc:mysql://localhost:3306/my_db?tinyInt1isBit=false&amp;characterEncoding=utf8mb4&amp;zeroDateTimeBehavior=convertToNull&amp;serverTimezone=UTC&amp;enabledTLSProtocols=TLSv1.2&amp;sessionVariables=transaction_isolation=&#x27;READ-COMMITTED&#x27;&amp;connectTimeout=5000&amp;socketTimeout=15000</span></span><br><span class="line">    <span class="attr">username:</span> <span class="string">caratacus</span></span><br><span class="line">    <span class="attr">password:</span> <span class="string">caratacus</span></span><br></pre></td></tr></table></figure>
