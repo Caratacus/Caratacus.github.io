@@ -37,6 +37,29 @@ document.ready(
 
         const default_theme = 'light' // 'dark'
 
+        function updateMermaidTheme(theme) {
+            if (typeof mermaid !== 'undefined') {
+                var mermaidTheme = theme === 'dark' ? 'dark' : 'default';
+                // Remove existing rendered mermaid diagrams and restore original code
+                document.querySelectorAll('.mermaid').forEach(function(el) {
+                    var originalCode = el.getAttribute('data-mermaid-code');
+                    if (!originalCode) {
+                        originalCode = el.textContent;
+                        el.setAttribute('data-mermaid-code', originalCode);
+                    }
+                    el.removeAttribute('data-processed');
+                    el.textContent = originalCode;
+                });
+                // Re-initialize with new theme and re-render all
+                mermaid.initialize({ startOnLoad: false, theme: mermaidTheme });
+                if (mermaid.run) {
+                    mermaid.run({ querySelector: '.mermaid' }).catch(function(e) { console.error(e); });
+                } else {
+                    mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                }
+            }
+        }
+
         function setTheme(status = 'light') {
             if (status === 'dark') {
                 window.sessionStorage.theme = 'dark'
@@ -49,6 +72,7 @@ document.ready(
                 document.getElementById("switch_default").checked = false
                 document.getElementById("mobile-toggle-theme").innerText = "· Light"
             }
+            updateMermaidTheme(status);
         };
 
         setTheme(window.sessionStorage.theme ?? default_theme)
