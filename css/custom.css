@@ -9,3 +9,179 @@
   vertical-align: -0.15em;
   margin-left: 2px;
 }
+/* ==============================
+   Hexo Blog Encrypt Minimal Styling
+   ============================== */
+#hexo-blog-encrypt {
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+#hexo-blog-encrypt > .hbe-content {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+#hexo-blog-encrypt .hbe-input {
+  max-width: 250px !important;
+  width: 100% !important;
+  position: relative;
+  padding-top: 2rem !important; /* Make room for static label */
+}
+/* Reset the input field to be completely static visually */
+#hexo-blog-encrypt .hbe-input-field {
+  font-size: 1rem !important;
+  padding: 8px 5px !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid #ccc !important;
+  opacity: 1 !important;
+  text-align: center !important;
+  transition: border-bottom-color 0.3s ease !important;
+  color: #333 !important; /* Force dark text in light mode */
+}
+#hexo-blog-encrypt .hbe-input-field:focus,
+#hexo-blog-encrypt .hbe-input-field:active {
+  background-color: transparent !important;
+  border-bottom-color: #555 !important; /* Darken the bottom line on focus */
+  outline: none !important;
+}
+/* Prevent Webkit Autofill background color change */
+#hexo-blog-encrypt .hbe-input-field:-webkit-autofill,
+#hexo-blog-encrypt .hbe-input-field:-webkit-autofill:hover,
+#hexo-blog-encrypt .hbe-input-field:-webkit-autofill:focus,
+#hexo-blog-encrypt .hbe-input-field:-webkit-autofill:active {
+  -webkit-transition-delay: 99999s;
+  transition-delay: 99999s;
+}
+/* Stop the label from doing wild CSS animations */
+#hexo-blog-encrypt .hbe-input-label-default {
+  pointer-events: none !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+#hexo-blog-encrypt .hbe-input-label-content-default {
+  transform: none !important; /* Kill the scale/move animation */
+  color: inherit !important;
+  position: absolute !important;
+  top: 0 !important;
+  width: 100% !important;
+  text-align: center !important;
+  font-size: 0.9rem !important;
+  color: #666 !important;
+}
+/* Hide the pseudo elements doing weird line animations */
+#hexo-blog-encrypt .hbe-input-label-default::before,
+#hexo-blog-encrypt .hbe-input-label-default::after {
+  display: none !important;
+}
+/* Error state styling */
+#hexo-blog-encrypt .hbe-input-error {
+  border-bottom-color: #ff4d4f !important;
+  animation: hbe-shake 0.4s 1 linear;
+}
+#hexo-blog-encrypt .hbe-input-error::placeholder {
+  color: #ff4d4f !important;
+  opacity: 1; /* Firefox */
+}
+.dark-theme #hexo-blog-encrypt .hbe-input-label-content-default {
+  color: #aaa !important;
+}
+.dark-theme #hexo-blog-encrypt .hbe-input-field {
+  border-bottom-color: #555 !important;
+  color: #eee !important;
+}
+.dark-theme #hexo-blog-encrypt .hbe-input-field:focus {
+  border-bottom-color: #aaa !important;
+}
+#hexo-blog-encrypt .hbe-button {
+  font-size: 0.85rem !important;
+  padding: 6px 15px !important;
+  margin-top: 1.5rem !important;
+}
+@-moz-keyframes hbe-shake {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@-webkit-keyframes hbe-shake {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@-o-keyframes hbe-shake {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@keyframes hbe-shake {
+  0% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
