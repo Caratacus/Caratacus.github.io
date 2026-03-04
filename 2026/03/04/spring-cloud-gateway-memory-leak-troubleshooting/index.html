@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Caratacus">
+
+
+
+
+
+<title>Spring Cloud Gateway 堆外内存泄漏排查 | Caratacus&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<!-- Mermaid Config -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const pagebody = document.getElementsByTagName('body')[0]
+
+            function setTheme(status) {
+
+                if (status === 'dark') {
+                    window.sessionStorage.theme = 'dark'
+                    pagebody.classList.add('dark-theme');
+
+                } else {
+                    window.sessionStorage.theme = 'light'
+                    pagebody.classList.remove('dark-theme');
+                }
+            };
+
+            setTheme(window.sessionStorage.theme || 'light')
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Caratacus&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Caratacus&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">
+                    <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4.5 17.27q-.213 0-.356-.145T4 16.768t.144-.356t.356-.143h15q.213 0 .356.144q.144.144.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.144T4 11.999t.144-.356t.356-.143h15q.213 0 .356.144t.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.143Q4 7.443 4 7.23t.144-.356t.356-.143h15q.213 0 .356.144T20 7.23t-.144.356t-.356.144z"/></svg>
+                    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="m12 12.708l-5.246 5.246q-.14.14-.344.15t-.364-.15t-.16-.354t.16-.354L11.292 12L6.046 6.754q-.14-.14-.15-.344t.15-.364t.354-.16t.354.16L12 11.292l5.246-5.246q.14-.14.345-.15q.203-.01.363.15t.16.354t-.16.354L12.708 12l5.246 5.246q.14.14.15.345q.01.203-.15.363t-.354.16t-.354-.16z"/></svg>
+                </div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if (toggleMenu.classList.contains("active")) {
+            toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        } else {
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Spring Cloud Gateway 堆外内存泄漏排查</h1>
+            
+                <div class="post-meta">
+                    
+
+                    
+                    
+                        <span class="post-category">
+                    标签：
+                            
+                                <a href="/categories/Engineering/">Engineering</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <p>最近在项目中使用 Spring Cloud Gateway 时，我遇到了一个关于堆外内存（Off-heap Memory）持续增长的问题。</p>
+<p>最初，我发现网关服务启动后，通过 Kubernetes 监控观察到 Pod 的内存使用量呈“阶梯状”上升。即使发生 GC，内存也没有明显回落，直到触及容器的内存上限。起初我并没有特别在意，直到我发现了以下错误：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">java.lang.OutOfMemoryError: Cannot reserve 13752223 bytes of direct buffer memory (allocated: 265781447, limit: 268435456)</span><br><span class="line">	at java.nio.Bits.reserveMemory(Bits.java:178) ~[?:?]</span><br><span class="line">	Suppressed: reactor.core.publisher.FluxOnAssembly$OnAssemblyException: </span><br><span class="line">Error has been observed at the following site(s):</span><br><span class="line">	*__checkpoint ⇢ com.abbemobility.framework.cloud.gateway.filter.ActuatorSecurityWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ com.abbemobility.gateway.security.PreAuthorizationFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.web.cors.reactive.CorsWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.cloud.gateway.filter.WeightCalculatorWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.security.web.server.authorization.AuthorizationWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.security.web.server.authorization.ExceptionTranslationWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.security.web.server.authentication.logout.LogoutWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.security.web.server.savedrequest.ServerRequestCacheWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.security.web.server.context.SecurityContextServerWebExchangeWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.security.web.server.authentication.AuthenticationWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.security.web.server.context.ReactorContextWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ com.abbemobility.gateway.security.PreAuthorizationFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.web.cors.reactive.CorsWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.security.web.server.header.HttpHeaderWriterWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.security.config.web.server.ServerHttpSecurity$ServerWebExchangeReactorContextWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.security.web.server.WebFilterChainProxy [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ org.springframework.boot.actuate.metrics.web.reactive.server.MetricsWebFilter [DefaultWebFilterChain]</span><br><span class="line">	*__checkpoint ⇢ io.opentracing.contrib.spring.web.webfilter.TracingWebFilter [DefaultWebFilterChain]</span><br><span class="line">	... (省略部分框架堆栈)</span><br></pre></td></tr></table></figure>
+
+<p>检查了JVM参数中<code>MaxDirectMemorySize</code>的值</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">-</span> <span class="string">&#x27;-XX:MaxDirectMemorySize=256M&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>查看了对应的内存监控，发现<code>Direct Buffers</code>的数值，无论是数量还是内存使用都在持续增长。</p>
+<p><img src="/images/2026/03/bb493792-d2d7-4078-80d6-a4b83db5c82c.png" alt="Pod 内存使用量监控"></p>
+<h2 id="初步排查，缩小范围"><a href="#初步排查，缩小范围" class="headerlink" title="初步排查，缩小范围"></a>初步排查，缩小范围</h2><p>Spring Cloud Gateway 底层依赖 Netty，而 Netty 默认使用直接内存（Direct Memory）来分配 <code>ByteBuf</code>。 有没有可能是这块出现问题？</p>
+<p>说做就做，马上新增JVM参数</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">- &#x27;-Dio.netty.leakDetection.level=ADVANCED&#x27;</span><br><span class="line">- &#x27;-XX:NativeMemoryTracking=detail&#x27;</span><br></pre></td></tr></table></figure>
+<p>新增代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> io.netty.buffer.PooledByteBufAllocatorMetric;</span><br><span class="line"><span class="keyword">import</span> io.netty.buffer.PooledByteBufAllocator;</span><br><span class="line"><span class="keyword">import</span> lombok.extern.slf4j.Slf4j;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Configuration;</span><br><span class="line"><span class="keyword">import</span> org.springframework.scheduling.annotation.EnableScheduling;</span><br><span class="line"><span class="keyword">import</span> org.springframework.scheduling.annotation.Scheduled;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@EnableScheduling</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">NettyMemoryMonitor</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Scheduled</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">printNettyMemoryStatus</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">PooledByteBufAllocatorMetric</span> <span class="variable">metric</span> <span class="operator">=</span> PooledByteBufAllocator.DEFAULT.metric();</span><br><span class="line">        log.info(<span class="string">&quot;【Netty内存监控】已用直接内存: &#123;&#125; MB, 直接内存Arena数: &#123;&#125;, Chunk大小: &#123;&#125; KB&quot;</span>,</span><br><span class="line">                metric.usedDirectMemory() / <span class="number">1024</span> / <span class="number">1024</span>,</span><br><span class="line">                metric.numDirectArenas(),</span><br><span class="line">                metric.chunkSize() / <span class="number">1024</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>经过一段时间的观察：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">【Netty内存监控】已用直接内存: 188 MB, 直接内存Arena数: 2, Chunk大小: 4096 KB</span><br><span class="line">【Netty内存监控】已用直接内存: 167 MB, 直接内存Arena数: 2, Chunk大小: 4096 KB</span><br><span class="line">【Netty内存监控】已用直接内存: 141 MB, 直接内存Arena数: 2, Chunk大小: 4096 KB</span><br><span class="line">【Netty内存监控】已用直接内存: 123 MB, 直接内存Arena数: 2, Chunk大小: 4096 KB</span><br><span class="line">【Netty内存监控】已用直接内存: 99 MB, 直接内存Arena数: 2, Chunk大小: 4096 KB</span><br><span class="line">【Netty内存监控】已用直接内存: 78 MB, 直接内存Arena数: 2, Chunk大小: 4096 KB</span><br><span class="line">【Netty内存监控】已用直接内存: 56 MB, 直接内存Arena数: 2, Chunk大小: 4096 KB</span><br><span class="line">【Netty内存监控】已用直接内存: 42 MB, 直接内存Arena数: 2, Chunk大小: 4096 KB</span><br><span class="line">【Netty内存监控】已用直接内存: 8 MB, 直接内存Arena数: 2, Chunk大小: 4096 KB</span><br></pre></td></tr></table></figure>
+
+<p>此时，我已经确认了是Netty这块的内存泄露。</p>
+<h2 id="Netty特性"><a href="#Netty特性" class="headerlink" title="Netty特性"></a>Netty特性</h2><p>Spring Cloud Gateway 底层依赖 Netty，而 Netty 默认使用直接内存（Direct Memory）来分配 <code>ByteBuf</code>。</p>
+<p>在原生的 Netty 中，我们通常直接调用 byteBuf.release() 或 ReferenceCountUtil.release(msg)。无论是 Spring 的包装还是 Netty 原生，调用这个 release() 的重要性可以用四个字来概括：生死攸关。</p>
+<p>如果不调用它，你的应用程序最终一定会因为内存泄漏而崩溃。它的重要性体现在以下几个核心层面：</p>
+<h3 id="1-拯救迟钝的-JVM-垃圾回收-GC"><a href="#1-拯救迟钝的-JVM-垃圾回收-GC" class="headerlink" title="1. 拯救迟钝的 JVM 垃圾回收 (GC)"></a>1. 拯救迟钝的 JVM 垃圾回收 (GC)</h3><p>为了追求极致的网络读写性能（实现零拷贝 Zero-Copy），Netty 默认使用的是<strong>堆外内存（Direct Memory）</strong>，而不是 JVM 堆内存。</p>
+<ul>
+<li>JVM 的垃圾回收器（GC）对“堆内内存”的管理非常高效，但对“堆外内存”的感知和回收非常迟钝。</li>
+<li>如果完全依赖 JVM GC 来清理堆外内存，内存释放的速度会远远跟不上高并发下网络请求分配内存的速度。</li>
+</ul>
+<h3 id="2-触发-Netty-的“池化”与“引用计数”机制"><a href="#2-触发-Netty-的“池化”与“引用计数”机制" class="headerlink" title="2. 触发 Netty 的“池化”与“引用计数”机制"></a>2. 触发 Netty 的“池化”与“引用计数”机制</h3><p>既然不能靠 JVM，Netty 就自己实现了一套内存管理系统：<strong>内存池（Pooled Allocator）</strong> + <strong>引用计数（Reference Counting）</strong>。</p>
+<ul>
+<li>每当 Netty 分配一块 <code>DataBuffer</code> 给你的请求用时，它的引用计数器初始化为 <code>1</code>。</li>
+<li><code>release()</code> 方法的作用，就是<strong>明确告诉 Netty：“我用完这块内存了，把计数器减 1”</strong>。</li>
+<li>当计数器归零时，Netty 会<strong>立刻、瞬间</strong>将这块内存回收到它的内存池中，马上就能分配给下一个网络请求使用。这保证了极高的吞吐量。</li>
+</ul>
+<h3 id="3-防止直接内存溢出-OOM-导致宕机"><a href="#3-防止直接内存溢出-OOM-导致宕机" class="headerlink" title="3. 防止直接内存溢出 (OOM) 导致宕机"></a>3. 防止直接内存溢出 (OOM) 导致宕机</h3><p>如果你读取了网络数据（比如 HTTP 请求的 Body），处理完业务逻辑后，忘记了调用 <code>release</code>，会发生什么？</p>
+<ul>
+<li>计数器永远不会归零。</li>
+<li>这块堆外内存永远不会被退还给 Netty 的内存池。</li>
+<li>随着请求量增加，内存池很快被耗尽，Netty 不得不向操作系统申请新的物理内存。</li>
+<li>最终，操作系统内存耗尽，应用抛出致命的 <code>java.lang.OutOfMemoryError: Direct buffer memory</code>，程序直接死掉。</li>
+</ul>
+<p>由于 Spring Cloud Gateway 是 Spring 团队开发的，他们提供了一个工具类方法 <code>DataBufferUtils.release(dataBuffer)</code>。</p>
+<p>当你使用 Spring WebFlux，且底层服务器是 Reactor Netty 时，这个 DataBuffer 本质上包装的就是 Netty 的 ByteBuf。</p>
+<h2 id="公司网关自有的一些行为"><a href="#公司网关自有的一些行为" class="headerlink" title="公司网关自有的一些行为"></a>公司网关自有的一些行为</h2><p>在公司项目的网关层中，实现了一些自定义的 <code>GlobalFilter</code> 和 <code>GatewayFilter</code> 用于处理请求体解密和响应体脱敏等操作。这些操作需要处理底层的 <code>Flux&lt;DataBuffer&gt;</code>。于是我开始推测，是否在自定义 <code>Filter</code> 中操作了这些 <code>DataBuffer</code>（底层即 Netty 的 <code>ByteBuf</code>）后，没有正确地释放它们，导致直接内存无法被回收。</p>
+<p>前面有提到我开启了两段JVM配置</p>
+<ol>
+<li><p>开启 Netty 内存泄漏检测 (<code>-Dio.netty.leakDetection.level=ADVANCED</code>)：这有助于在日志中捕获到未调用 <code>release()</code> 的 Buffer 分配和最后访问的代码堆栈。</p>
+</li>
+<li><p>开启本地内存追踪 (<code>-XX:NativeMemoryTracking=detail</code>)：用于观察不同内存区域（如 Direct 区域）的变化情况。</p>
+</li>
+</ol>
+<p>通过压测并观察日志，当发生泄漏并触发垃圾回收时，Netty 的 <code>ResourceLeakDetector</code> 确实在日志中输出了详细的泄漏报告。我看到了类似下面这样的错误信息：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[ERROR] io.netty.util.ResourceLeakDetector - LEAK: ByteBuf.release() was not called before it&#x27;s garbage-collected. See https://netty.io/wiki/reference-counted-objects.html for more information.</span><br><span class="line">Recent access records: </span><br><span class="line">#1:</span><br><span class="line">	io.netty.buffer.AdvancedLeakAwareByteBuf.readBytes(AdvancedLeakAwareByteBuf.java:613)</span><br><span class="line">	org.springframework.core.io.buffer.NettyDataBuffer.read(NettyDataBuffer.java:166)</span><br><span class="line">	... (省略部分框架堆栈)</span><br><span class="line">Created at:</span><br><span class="line">	io.netty.buffer.PooledByteBufAllocator.newDirectBuffer(PooledByteBufAllocator.java:395)</span><br><span class="line">	... (省略部分分配堆栈)</span><br></pre></td></tr></table></figure>
+
+<h2 id="尝试与方案"><a href="#尝试与方案" class="headerlink" title="尝试与方案"></a>尝试与方案</h2><p>经过日志分析，明确的结论是：在处理微服务响应（Response）的自定义 Filter 中，部分情况下遗漏了释放 Buffer 的操作，这是导致直接内存泄漏的根本原因。</p>
+<p>回顾出问题的代码，在拦截并修改响应体时，我使用了 Reactor 的 <code>.buffer()</code> 操作符来收集数据：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 我之前错误的代码示例</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> Mono&lt;Void&gt; <span class="title function_">writeWith</span><span class="params">(Publisher&lt;? extends DataBuffer&gt; body)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (body <span class="keyword">instanceof</span> Flux) &#123;</span><br><span class="line">        Flux&lt;? <span class="keyword">extends</span> <span class="title class_">DataBuffer</span>&gt; fluxBody = (Flux&lt;? <span class="keyword">extends</span> <span class="title class_">DataBuffer</span>&gt;) body;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.writeWith(fluxBody.buffer()</span><br><span class="line">                .map(dataBuffers -&gt; &#123;</span><br><span class="line">                    <span class="type">DataBufferFactory</span> <span class="variable">dataBufferFactory</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DefaultDataBufferFactory</span>();</span><br><span class="line">                    <span class="type">DataBuffer</span> <span class="variable">join</span> <span class="operator">=</span> dataBufferFactory.join(dataBuffers);</span><br><span class="line">                    <span class="type">byte</span>[] content = <span class="keyword">new</span> <span class="title class_">byte</span>[join.readableByteCount()];</span><br><span class="line">                    join.read(content);</span><br><span class="line">                    <span class="comment">// 这里虽然手动释放了，但在特定情况下并不会被执行</span></span><br><span class="line">                    DataBufferUtils.release(join); </span><br><span class="line">                    <span class="keyword">return</span> bufferFactory.wrap(transforBytes(content, ...));</span><br><span class="line">                &#125;));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">super</span>.writeWith(body);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在正常的请求流转中，这段代码确实能正常释放内存。但是，当遇到网络抖动导致下游服务异常或客户端主动断开连接时，流会提前中断。此时 Reactor 会丢弃 <code>.buffer()</code> 正在收集的临时 <code>List&lt;DataBuffer&gt;</code>。由于 Reactor 作为通用响应式框架，它只负责丢弃 Java 对象引用，并不知道这些对象底层关联着需要调用 <code>.release()</code> 的 Netty 堆外内存，这就导致了泄漏。</p>
+<p>针对这个问题，我采用了 Spring 官方提供的 <code>DataBufferUtils.join()</code> 来替代通用的 <code>.buffer()</code> 操作符：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> Mono&lt;Void&gt; <span class="title function_">writeWith</span><span class="params">(Publisher&lt;? extends DataBuffer&gt; body)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (body <span class="keyword">instanceof</span> Flux) &#123;</span><br><span class="line">        Flux&lt;? <span class="keyword">extends</span> <span class="title class_">DataBuffer</span>&gt; fluxBody = (Flux&lt;? <span class="keyword">extends</span> <span class="title class_">DataBuffer</span>&gt;) body;</span><br><span class="line">        <span class="comment">// 核心调整</span></span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.writeWith(DataBufferUtils.join(fluxBody)</span><br><span class="line">                .map(dataBuffer -&gt; &#123;</span><br><span class="line">                    <span class="type">byte</span>[] content = <span class="keyword">new</span> <span class="title class_">byte</span>[dataBuffer.readableByteCount()];</span><br><span class="line">                    dataBuffer.read(content);</span><br><span class="line">                    <span class="comment">// 业务代码读取完后，依然需要显式释放合并后的整块内存</span></span><br><span class="line">                    DataBufferUtils.release(dataBuffer);</span><br><span class="line">                    <span class="keyword">return</span> bufferFactory.wrap(transforBytes(content, ...));</span><br><span class="line">                &#125;));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">super</span>.writeWith(body);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="总结与反思"><a href="#总结与反思" class="headerlink" title="总结与反思"></a>总结与反思</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">   <span class="comment">// Spring 源码</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Mono&lt;DataBuffer&gt; <span class="title function_">join</span><span class="params">(Publisher&lt;? extends DataBuffer&gt; buffers, <span class="type">int</span> maxByteCount)</span> &#123;</span><br><span class="line">	Assert.notNull(buffers, <span class="string">&quot;&#x27;dataBuffers&#x27; must not be null&quot;</span>);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (buffers <span class="keyword">instanceof</span> Mono) &#123;</span><br><span class="line">		<span class="keyword">return</span> (Mono&lt;DataBuffer&gt;) buffers;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> Flux.from(buffers)</span><br><span class="line">			.collect(() -&gt; <span class="keyword">new</span> <span class="title class_">LimitedDataBufferList</span>(maxByteCount), LimitedDataBufferList::add)</span><br><span class="line">			.filter(list -&gt; !list.isEmpty())</span><br><span class="line">			.map(list -&gt; list.get(<span class="number">0</span>).factory().join(list))</span><br><span class="line">			.doOnDiscard(PooledDataBuffer.class, DataBufferUtils::release);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p> <code>Spring</code> 源码中，<code>DataBufferUtils.join()</code> 底层利用了 Reactor 的 <code>doOnDiscard</code> 机制（即 <code>.doOnDiscard(DataBuffer.class, DataBufferUtils::release)</code>）。明确的结论是：如果在收集数据的过程中流被异常中止，该钩子函数能确保在丢弃元素前，对每个 <code>DataBuffer</code> 调用 <code>release()</code> 进行物理释放。</p>
+<p>同时，结合官方文档与底层机制分析，确凿的事实是底层的 Netty 采用引用计数机制来管理池化的直接内存。在 Spring WebFlux 的响应式编程模型中，操作底层的 <code>DataBuffer</code> 时，如果消费了数据流并且不再向下传递，就必须显式地调用 <code>release()</code> 来释放资源。</p>
+<p>这次排查不仅帮助解决了当前的内存泄漏问题，也让我学习到了如何利用 JVM 参数和 Netty 泄漏检测机制来诊断堆外内存问题。进一步提醒我，需要深入研究 Reactor 流的异常处理机制和 WebFlux 底层原理，在使用响应式流时必须时刻考虑“谁消费，谁释放”的原则，以及流被提前取消时的资源清理逻辑。</p>
+
+        </div>
+
+        
+            <section class="post-copyright">
+                <div class="post-copyright-avatar">
+                    <img src="/image/avatar.jpeg" alt="avatar">
+                </div>
+                <div class="post-copyright-info">
+                    <p class="copyright-item">
+                        <span>说明:</span>
+                        <span>本站点博文除特殊说明转载自xxx外，均为博主原创内容</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>转载请注明来源:</span>
+                        <span>Caratacus&#39;s Blog-《Spring Cloud Gateway 堆外内存泄漏排查》</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>本文链接地址:</span>
+                        <span><a href="https://caratacus.github.io/2026/03/04/spring-cloud-gateway-memory-leak-troubleshooting/">https://caratacus.github.io/2026/03/04/spring-cloud-gateway-memory-leak-troubleshooting/</a></span>
+                    </p>
+                </div>
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Spring-Cloud-Gateway/"># Spring Cloud Gateway</a>
+                    
+                        <a href="/tags/JVM/"># JVM</a>
+                    
+                        <a href="/tags/%E5%86%85%E5%AD%98%E6%B3%84%E6%BC%8F/"># 内存泄漏</a>
+                    
+                        <a href="/tags/Netty/"># Netty</a>
+                    
+                        <a href="/tags/WebFlux/"># WebFlux</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2026/03/02/observations-on-ai-programming-tools/">当Claude Code来敲门：AI狂飙时代，一个Java开发者的迷茫与重塑 🔐</a>
+            
+        </section>
+
+
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© <a href="https://github.com/Caratacus" target="_blank">Caratacus</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
