@@ -310,7 +310,7 @@
 </ul>
 <h3 id="方案二：JVM-垃圾回收器降级与调优（中等优先级，务实选择）"><a href="#方案二：JVM-垃圾回收器降级与调优（中等优先级，务实选择）" class="headerlink" title="方案二：JVM 垃圾回收器降级与调优（中等优先级，务实选择）"></a>方案二：JVM 垃圾回收器降级与调优（中等优先级，务实选择）</h3><p>对于 1GB 堆 &#x2F; 2GB 容器的严苛环境，放弃 ZGC ，回归 G1GC：</p>
 <ul>
-<li><strong>调整参数：</strong><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">-XX:+UseG1GC</span><br><span class="line">-XX:MaxGCPauseMillis=200</span><br><span class="line">-XX:G1HeapRegionSize=8M</span><br></pre></td></tr></table></figure></li>
+<li><strong>调整参数：</strong><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">-XX:+UseG1GC</span><br><span class="line">-XX:MaxGCPauseMillis=100 </span><br><span class="line">-XX:G1HeapRegionSize=8M</span><br></pre></td></tr></table></figure></li>
 <li><strong>收益：</strong> 解决大对象分配问题，同时释放 ZGC 占据的几百兆物理内存给操作系统和 glibc 缓冲，极大地缓解了容器的整体内存压力。</li>
 </ul>
 <h3 id="方案三：底层-OS-内存分配器优化（最低优先级，兜底方案）"><a href="#方案三：底层-OS-内存分配器优化（最低优先级，兜底方案）" class="headerlink" title="方案三：底层 OS 内存分配器优化（最低优先级，兜底方案）"></a>方案三：底层 OS 内存分配器优化（最低优先级，兜底方案）</h3><p>针对 glibc 的多 Arena 碎片问题，有两个方向可以尝试：</p>
@@ -318,6 +318,9 @@
 <li><strong>限制 Arena 数量：</strong><br>通过配置环境变量 <code>export MALLOC_ARENA_MAX=1</code>（或 2、4）。实测发现该参数确实能强制降低内存碎片，但在高并发网络 I&#x2F;O 下，会导致线程在分配内存时面临严重的锁竞争（Lock Contention），引起 CPU 使用率飙升，属于用 CPU 换内存的妥协之举。</li>
 <li><strong>替换为 jemalloc&#x2F;tcmalloc：</strong><br><code>jemalloc</code> 通过维护带有不同大小桶（buckets）的 Arena，能更有效地控制内存碎片率，同时针对多线程并发进行了优化，减少了锁竞争。这是比调整 <code>MALLOC_ARENA_MAX</code> 更优雅的底层解决方案。</li>
 </ol>
+<h2 id="最终方案"><a href="#最终方案" class="headerlink" title="最终方案"></a>最终方案</h2><blockquote>
+<p>方案一 + 方案二 + 方案三</p>
+</blockquote>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次排查是一次从 K8s 运维层、深入到 JVM 内存机制、再下探到 Linux glibc C 库，最后回归到业务架构设计的完整闭环。很多时候，云原生环境下的内存问题往往是<strong>堆内业务不合理与堆外基础设施机制冲突</strong>的综合产物。</p>
 <p>在开发与架构选择中，我们不仅要懂底层原理，更要明确：<strong>业务层面的低效设计，最终都会以底层基础设施承受不住的方式爆发。</strong> 优先从业务架构设计上解决问题，才是系统长治久安的根本。</p>
 <hr>
@@ -358,9 +361,9 @@
                 <span class="tag">
                     
                     
-                        <a href="/tags/Java/"># Java</a>
-                    
                         <a href="/tags/K8S/"># K8S</a>
+                    
+                        <a href="/tags/Java/"># Java</a>
                     
                         <a href="/tags/OOM/"># OOM</a>
                     
