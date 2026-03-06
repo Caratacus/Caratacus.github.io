@@ -233,7 +233,7 @@
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">-</span> <span class="string">&#x27;-XX:MaxDirectMemorySize=256M&#x27;</span></span><br></pre></td></tr></table></figure>
 
 <p>查看了对应的内存监控，发现<code>Direct Buffers</code>的数值，无论是数量还是内存使用都在持续增长。</p>
-<p><img src="/images/2026/03/bb493792-d2d7-4078-80d6-a4b83db5c82c.png" alt="Pod 内存使用量监控"></p>
+<p><img src="/images/2026/03/bb493792-d2d7-4078-80d6-a4b83db5c82c-1.png" alt="Pod 内存使用量监控"></p>
 <h2 id="初步排查，缩小范围"><a href="#初步排查，缩小范围" class="headerlink" title="初步排查，缩小范围"></a>初步排查，缩小范围</h2><p>Spring Cloud Gateway 底层依赖 Netty，而 Netty 默认使用直接内存（Direct Memory）来分配 <code>ByteBuf</code>。 有没有可能是这块出现问题？</p>
 <p>说做就做，马上新增JVM参数</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">- &#x27;-Dio.netty.leakDetection.level=ADVANCED&#x27;</span><br><span class="line">- &#x27;-XX:NativeMemoryTracking=detail&#x27;</span><br></pre></td></tr></table></figure>

@@ -257,15 +257,15 @@
 <p>这是 OpenClaw 的白名单保护机制。只需在<strong>另一个新的终端窗口</strong>里，复制它提示的命令执行一下，将自己的 Discord ID 加入白名单即可：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openclaw pairing approve discord 你的Pairing_code</span><br></pre></td></tr></table></figure>
 
-<p><img src="/images/2026/03/6a02d451-57af-4851-851c-9f09cc6c2db1.png" alt="OpenClaw Pairing Approve"></p>
+<p><img src="/images/2026/03/6a02d451-57af-4851-851c-9f09cc6c2db1-1.png" alt="OpenClaw Pairing Approve"></p>
 <p><em>(顺便提一句 <code>OpenClaw</code> 的本地配置文件其实藏在隐藏目录 <code>~/.openclaw/openclaw.json</code> 里，这在后续排查中也提供了一些线索。)</em></p>
 <h3 id="5-解决第三方-AI-API-无法调用的问题"><a href="#5-解决第三方-AI-API-无法调用的问题" class="headerlink" title="5. 解决第三方 AI API 无法调用的问题"></a>5. 解决第三方 AI API 无法调用的问题</h3><p>解决了 Discord 的连通性后，我发现虽然 Discord 功能正常，但第三方 AI 的 API 却无法调用成功。</p>
-<p><img src="/images/2026/03/14cf5888-32de-4ef7-a0f9-697131cc7fba.png" alt="API Call Failed"></p>
+<p><img src="/images/2026/03/14cf5888-32de-4ef7-a0f9-697131cc7fba-1.png" alt="API Call Failed"></p>
 <p>经过排查，在 <code>~/Library/LaunchAgents/ai.openclaw.gateway.plist</code> 中存在多余的环境变量配置，这些环境变量可能干扰了 Node.js 进程对第三方 API 的直连请求：</p>
 <figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">key</span>&gt;</span>http_proxy<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">string</span>&gt;</span>http://127.0.0.1:7897<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">key</span>&gt;</span>https_proxy<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">string</span>&gt;</span>http://127.0.0.1:7897<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">key</span>&gt;</span>all_proxy<span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">string</span>&gt;</span>socks5://127.0.0.1:7897<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
 <p>我将这些环境变量配置删除后，第三方 API 的调用恢复了正常。</p>
-<p><img src="/images/2026/03/7633f172-fe82-4f52-aa91-e16babdfd7c6.png" alt="Remove Proxy Env from Plist"></p>
+<p><img src="/images/2026/03/7633f172-fe82-4f52-aa91-e16babdfd7c6-1.png" alt="Remove Proxy Env from Plist"></p>
 <p>修改完成后，我执行了 <code>openclaw gateway restart</code> 来重启网关服务，确保所有配置生效。</p>
 <h2 id="总结与反思"><a href="#总结与反思" class="headerlink" title="总结与反思"></a>总结与反思</h2><p>这次排查帮助我更好地理解了 macOS 下网络交互的差异以及守护进程（launchd）的配置细节。以前的我会经常依赖于设置全局的环境变量来解决代理问题，但这次经历让我认识到，对于复杂的网络协议，结合 <code>Proxychains</code> 进行进程级别的强制代理，同时清理可能引起冲突的全局环境变量，是一个更加精细且可靠的排障方向。</p>
 <p>这也提醒了我，在处理涉及多个网络链路（如同时连接 Discord WebSocket 和第三方 REST API）的复杂应用时，需要更仔细地梳理每一层网络请求的走向，避免产生意料之外的代理拦截。</p>

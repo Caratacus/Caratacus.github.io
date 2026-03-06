@@ -275,7 +275,7 @@
 
 <p>然而过了一天，发现 Pod 依然 OOM。这时我意识到自己陷入了一个<strong>认知误区</strong>：K8s 的 <code>OOMKilled (Exit Code 137)</code> 是由 <strong>Linux Cgroup 层面的严格限制</strong>触发的。当 Pod 的总体物理内存使用量（RSS）超过了 <code>limits.memory</code>（即 2GB），无论 QoS 是什么级别，都会被操作系统直接 Kill 掉。QoS 仅仅影响节点物理内存不足时的<strong>驱逐（Eviction）顺序</strong>，无法拯救 Pod 自身越界引发的 OOM。</p>
 <p>查看 Pod 资源监控，证实了内存使用确实超出了 2G 的硬性限制：</p>
-<p><img src="/images/2026/03/57992ac7-da41-4229-a0d8-edaa65d13fe2.png" alt="Pod Resource Monitoring"></p>
+<p><img src="/images/2026/03/57992ac7-da41-4229-a0d8-edaa65d13fe2-1.png" alt="Pod Resource Monitoring"></p>
 <h2 id="JVM-内存剖析：消失的-700MB-去哪了？"><a href="#JVM-内存剖析：消失的-700MB-去哪了？" class="headerlink" title="JVM 内存剖析：消失的 700MB 去哪了？"></a>JVM 内存剖析：消失的 700MB 去哪了？</h2><p>为了追踪 JVM 内存的使用情况，我开启了 Native Memory Tracking (NMT)：<code>-XX:NativeMemoryTracking=detail</code>。</p>
 <p>启动初期的 NMT 输出如下：<br><em>(省略部分输出…)</em></p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Total: reserved=57916MB, committed=1347MB</span><br><span class="line">...</span><br><span class="line">-                 Java Heap (reserved=49152MB, committed=1024MB)</span><br><span class="line">...</span><br><span class="line">-                        GC (reserved=8250MB, committed=90MB)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
@@ -284,8 +284,8 @@
 <p><strong>疑问二：物理内存去哪了？</strong><br>已知 JVM 的堆内存（1GB）、元空间（~100MB）、CodeCache 等总和约为 1.3GB。那么 K8S 限制的 2GB 中，剩余的大约 700MB 物理内存去哪了？</p>
 <p>在 ZGC 场景下，GC 自身的元数据（如 Live Map、Forwarding Table 等）开销极大。尤其在堆被打满且包含较多大对象时，转发表（Forwarding Table）极度膨胀。保守估算，在高峰期 ZGC 的 GC 域 committed 物理内存可能会冲到 <strong>200MB ~ 400MB</strong>。但这仍然无法完全解释剩下所有内存的去向。</p>
 <p>我们需要结合业务监控来寻找最后的推手。</p>
-<p><img src="/images/2026/03/3a7125d3-198c-4218-bda2-1d0117ca9a60.png" alt="Zheap Memory Monitoring"></p>
-<h2 id="核心发现：堆内与堆外的双重危机"><a href="#核心发现：堆内与堆外的双重危机" class="headerlink" title="核心发现：堆内与堆外的双重危机"></a>核心发现：堆内与堆外的双重危机</h2><p><img src="/images/2026/03/dd8a7e3e-1469-4fee-b2b9-52be8f67523e.png" alt="Monitoring"></p>
+<p><img src="/images/2026/03/3a7125d3-198c-4218-bda2-1d0117ca9a60-1.png" alt="Zheap Memory Monitoring"></p>
+<h2 id="核心发现：堆内与堆外的双重危机"><a href="#核心发现：堆内与堆外的双重危机" class="headerlink" title="核心发现：堆内与堆外的双重危机"></a>核心发现：堆内与堆外的双重危机</h2><p><img src="/images/2026/03/dd8a7e3e-1469-4fee-b2b9-52be8f67523e-1.png" alt="Monitoring"></p>
 <p>在监控中，02:00 到 02:01 期间发生了剧烈异动，这里暴露出了<strong>两路并发危机</strong>：</p>
 <h3 id="1-堆内危机：Allocation-Stall-分配停顿"><a href="#1-堆内危机：Allocation-Stall-分配停顿" class="headerlink" title="1. 堆内危机：Allocation Stall (分配停顿)"></a>1. 堆内危机：Allocation Stall (分配停顿)</h3><ul>
 <li><strong>现象：</strong> 内存分配率（allocated）瞬间从几十 MB&#x2F;s 飙升至 <strong>200 MB&#x2F;s</strong>。随后，代表 <code>Allocation Stall</code> 的黄线急剧上升。</li>
