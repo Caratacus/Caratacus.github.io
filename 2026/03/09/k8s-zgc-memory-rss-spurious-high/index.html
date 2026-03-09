@@ -227,8 +227,8 @@
         <div class="post-content">
             <p>本文涉及的主要环境与基础组件版本如下：</p>
 <ul>
-<li>JDK：17 及以上</li>
-<li>容器环境：Docker &#x2F; Kubernetes (兼容 Cgroup V1 与 V2 规范)</li>
+<li>JDK：17</li>
+<li>容器环境：Docker &#x2F; Kubernetes</li>
 <li>垃圾回收器：G1, ZGC</li>
 </ul>
 <h2 id="问题定义"><a href="#问题定义" class="headerlink" title="问题定义"></a>问题定义</h2><p>JDK 版本升级后并且把垃圾回收器从 G1 切换至 ZGC 的过程中，我观察到了一个违背直觉的监控现象。当 Pod 的容器内存上限（Limit）严格限制在 2GB 时，通过传统的系统级命令探查进程状态，原先使用 G1 的服务 RSS（Resident Set Size，驻留内存）稳定在 1.5GB 左右；而切换至 ZGC 的服务，其 RSS 读数竟飙升至 3.5GB，不仅远超 2GB 的硬性阈值，甚至达到了不可思议的比例。</p>
