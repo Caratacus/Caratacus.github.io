@@ -283,8 +283,8 @@
 <p><strong>疑问一：为什么 1GB 堆的 <code>reserved</code> 高达 49152MB？</strong><br>这是 ZGC 独有的 <strong>“多重映射”（Multi-Mapping）</strong> 技术（用于实现着色指针 Colored Pointers），它会将同一块物理内存映射到虚拟地址空间的 3 个不同位置（Remapped, Marked0, Marked1）。所以 <code>49152MB ≈ 1024MB × 3 × 16</code> 只是虚拟地址空间的预留，<strong>并不消耗真实的物理内存或 swap</strong>。</p>
 <p><strong>疑问二：物理内存去哪了？</strong><br>已知 JVM 的堆内存（1GB）、元空间（~100MB）、CodeCache 等总和约为 1.3GB。那么 K8S 限制的 2GB 中，剩余的大约 700MB 物理内存去哪了？</p>
 <p>在 ZGC 场景下，GC 自身的元数据（如 Live Map、Forwarding Table 等）开销极大。尤其在堆被打满且包含较多大对象时，转发表（Forwarding Table）极度膨胀。保守估算，在高峰期 ZGC 的 GC 域 committed 物理内存可能会冲到 <strong>200MB ~ 400MB</strong>。但这仍然无法完全解释剩下所有内存的去向。</p>
-<p><strong>容器下 Java 内存排查指南：G1 与 ZGC 的真实占用怎么看？</strong></p>
-<p><a href="/2026/03/09/k8s-zgc-memory-rss-spurious-high/">容器环境下 G1 与 ZGC 内存统计差异与虚高溯源</a></p>
+<p><strong>G1 与 ZGC 的真实占用怎么看？</strong></p>
+<p>这可以查看这篇文章：<a href="/2026/03/09/k8s-zgc-memory-rss-spurious-high/">容器环境下 G1 与 ZGC 内存统计差异与虚高溯源</a></p>
 <h3 id="700MB-内存拆解计算模型"><a href="#700MB-内存拆解计算模型" class="headerlink" title="700MB 内存拆解计算模型"></a>700MB 内存拆解计算模型</h3><p>以下是在 <strong>1核、1GB 堆 + 2GB 容器限制 + ZGC + 高并发网络 IO</strong> 场景下的估算模型：</p>
 <table>
 <thead>
@@ -466,15 +466,15 @@
                     
                         <a href="/tags/K8S/"># K8S</a>
                     
+                        <a href="/tags/OOM/"># OOM</a>
+                    
+                        <a href="/tags/glibc/"># glibc</a>
+                    
                         <a href="/tags/JVM/"># JVM</a>
                     
                         <a href="/tags/ZGC/"># ZGC</a>
                     
                         <a href="/tags/G1/"># G1</a>
-                    
-                        <a href="/tags/OOM/"># OOM</a>
-                    
-                        <a href="/tags/glibc/"># glibc</a>
                     
                         
                 </span>
