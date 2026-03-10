@@ -393,7 +393,7 @@
 <li><strong>替换为 jemalloc&#x2F;tcmalloc：</strong><br><code>jemalloc</code> 通过维护带有不同大小桶（buckets）的 Arena，能更有效地控制内存碎片率，同时针对多线程并发进行了优化，减少了锁竞争。这是比调整 <code>MALLOC_ARENA_MAX</code> 更优雅的底层解决方案。</li>
 </ol>
 <h2 id="效果验证"><a href="#效果验证" class="headerlink" title="效果验证"></a>效果验证</h2><p>经过上述优化方案的完整落地，系统在后续的日子里的表现得到了根本性改善：</p>
-<p><img src="/images/2026/03/0246a0cf-ca72-4b64-8050-850e4c031067-1.png" alt="Monitoring"></p>
+<p><img src="/images/2026/03/0246a0cf-ca72-4b64-8050-850e4c031067-1.jpg" alt="Monitoring"></p>
 <table>
 <thead>
 <tr>
