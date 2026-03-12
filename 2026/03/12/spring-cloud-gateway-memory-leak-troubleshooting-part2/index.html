@@ -226,12 +226,6 @@
 
         <div class="post-content">
             <p>本文是 <a href="/2026/03/04/spring-cloud-gateway-memory-leak-troubleshooting-part1/">Spring Cloud Gateway 堆外内存泄漏排查（上）</a> 的续篇。在上篇中，我定位到了自定义 Filter 中使用 <code>.buffer()</code> 操作符导致堆外内存泄漏的问题，并将方案调整为 <code>DataBufferUtils.join()</code>。</p>
-<p>本文涉及的主要依赖版本如下：</p>
-<ul>
-<li>Spring Boot：3.2.x</li>
-<li>Spring Cloud：2023.0.x</li>
-<li>Reactor Netty：1.1.x</li>
-</ul>
 <h2 id="泄漏再次发生"><a href="#泄漏再次发生" class="headerlink" title="泄漏再次发生"></a>泄漏再次发生</h2><p>在首次修复上线一周后，同样的告警再次触发。</p>
 <p><img src="/images/2026/03/b73b5cdb-e454-41ea-bc6a-96ed24941101-1.png" alt="告警再次触发，显示内存泄漏问题复现"></p>
 <p>Netty 的 <code>ResourceLeakDetector</code> 再次输出了泄漏报告：</p>
