@@ -276,7 +276,7 @@
 <p>然而过了一天，发现 Pod 依然 OOM。这时我意识到自己陷入了一个<strong>认知误区</strong>：K8s 的 <code>OOMKilled (Exit Code 137)</code> 是由 <strong>Linux Cgroup 层面的严格限制</strong>触发的。当 Pod 的总体物理内存使用量（RSS）超过了 <code>limits.memory</code>（即 2GB），无论 QoS 是什么级别，都会被操作系统直接 Kill 掉。QoS 仅仅影响节点物理内存不足时的<strong>驱逐（Eviction）顺序</strong>，无法拯救 Pod 自身越界引发的 OOM。</p>
 <p>查看 Pod 资源监控，证实了内存使用确实超出了 2G 的硬性限制：</p>
 <p><img src="/images/2026/03/57992ac7-da41-4229-a0d8-edaa65d13fe2-1.png" alt="Pod Resource Monitoring"></p>
-<h2 id="JVM-内存剖析：消失的-700MB-去哪了？"><a href="#JVM-内存剖析：消失的-700MB-去哪了？" class="headerlink" title="JVM 内存剖析：消失的 700MB 去哪了？"></a>JVM 内存剖析：消失的 700MB 去哪了？</h2><p>为了追踪 JVM 内存的使用情况，我开启了 Native Memory Tracking (NMT)：<code>-XX:NativeMemoryTracking=detail</code>。</p>
+<h2 id="JVM-内存剖析：消失的-700MB-去哪了？"><a href="#JVM-内存剖析：消失的-700MB-去哪了？" class="headerlink" title="JVM 内存剖析：消失的 700MB 去哪了？"></a>JVM 内存剖析：消失的 700MB 去哪了？</h2><p>为了追踪 JVM 内存的使用情况，我开启了 Native Memory Tracking (NMT)：<code>-XX:NativeMemoryTracking=summary</code>。</p>
 <p>启动初期的 NMT 输出如下：<br><em>(省略部分输出…)</em></p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Total: reserved=57916MB, committed=1347MB</span><br><span class="line">...</span><br><span class="line">-                 Java Heap (reserved=49152MB, committed=1024MB)</span><br><span class="line">...</span><br><span class="line">-                        GC (reserved=8250MB, committed=90MB)</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
 
@@ -467,15 +467,15 @@
                     
                         <a href="/tags/K8S/"># K8S</a>
                     
-                        <a href="/tags/OOM/"># OOM</a>
-                    
-                        <a href="/tags/glibc/"># glibc</a>
-                    
                         <a href="/tags/JVM/"># JVM</a>
                     
                         <a href="/tags/ZGC/"># ZGC</a>
                     
                         <a href="/tags/G1/"># G1</a>
+                    
+                        <a href="/tags/OOM/"># OOM</a>
+                    
+                        <a href="/tags/glibc/"># glibc</a>
                     
                         
                 </span>
