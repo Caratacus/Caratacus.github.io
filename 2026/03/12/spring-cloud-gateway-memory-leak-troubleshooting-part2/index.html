@@ -226,7 +226,7 @@
 
         <div class="post-content">
             <p>本文是 <a href="/2026/03/04/spring-cloud-gateway-memory-leak-troubleshooting-part1/">Spring Cloud Gateway 堆外内存泄漏排查（上）</a> 的续篇。在上篇中，我定位到了自定义 Filter 中使用 <code>.buffer()</code> 操作符导致堆外内存泄漏的问题，并将方案调整为 <code>DataBufferUtils.join()</code>。</p>
-<p>本文涉及的主要依赖版本如下：</p>
+<p>补充下之前遗漏的主要依赖版本：</p>
 <ul>
 <li>Spring Cloud Gateway Server：3.1.4</li>
 <li>Reactor Netty Core：1.0.24</li>
@@ -255,12 +255,12 @@
 <p>为了消除这些盲区，我进行了第二次重构，引入了 <code>try-finally</code> 块确保释放，并使用 <code>Flux.from()</code> 统一封装 Publisher：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 统一封装并使用 try-finally 确保 Buffer 必然被释放</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> Mono&lt;Void&gt; <span class="title function_">writeWith</span><span class="params">(Publisher&lt;? extends DataBuffer&gt; body)</span> &#123;</span><br><span class="line">    Flux&lt;? <span class="keyword">extends</span> <span class="title class_">DataBuffer</span>&gt; fluxBody = Flux.from(body);</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">super</span>.writeWith(DataBufferUtils.join(fluxBody)</span><br><span class="line">          .map(dataBuffer -&gt; &#123;</span><br><span class="line">              <span class="keyword">try</span> &#123;</span><br><span class="line">                  <span class="type">byte</span>[] content = <span class="keyword">new</span> <span class="title class_">byte</span>[dataBuffer.readableByteCount()];</span><br><span class="line">                  dataBuffer.read(content);</span><br><span class="line">                  <span class="keyword">return</span> bufferFactory.wrap(transforBytes(content, exchange, originalResponse));</span><br><span class="line">              &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                  <span class="comment">// 无论转换成功与否，合并后的 DataBuffer 必须显式释放</span></span><br><span class="line">                  DataBufferUtils.release(dataBuffer);</span><br><span class="line">              &#125;</span><br><span class="line">          &#125;)</span><br><span class="line">          .onErrorResume(e -&gt; &#123;</span><br><span class="line">              log.error(<span class="string">&quot;Modify response body exception&quot;</span>, e);</span><br><span class="line">              originalResponse.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);</span><br><span class="line">              <span class="keyword">return</span> Mono.empty();</span><br><span class="line">          &#125;));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>将上述改进部署至测试环境。然而，在经过数天的压测与观察后，遗憾的是，Direct Buffers 缓慢增长的现象依然存在。代码层面的显式遗漏已被修补，这意味着泄漏可能隐藏在更深层的框架交互中。</p>
+<p>将上述改进部署至测试环境。然而，在经过数天的压测与观察后，遗憾的是，Direct Buffers 缓慢增长的现象依然存在。代码层面的显式遗漏已被修补，我逐渐开始怀疑泄漏可能隐藏在更深层的框架交互中。</p>
 <h2 id="3-社区关联-Issue-研判"><a href="#3-社区关联-Issue-研判" class="headerlink" title="3. 社区关联 Issue 研判"></a>3. 社区关联 Issue 研判</h2><p>在自身的代码排查陷入瓶颈后，我转向梳理 Spring Cloud Gateway 与 Reactor Netty 社区的 Issue 记录。研读大量相关讨论后，我发现这是一个在此架构组合下极其普遍且难以根除的顽疾。针对收集到的大量 GitHub Issue，我将其归纳为以下三种引发 <code>ByteBuf.release()</code> 泄漏的核心场景：</p>
 <ol>
-<li><strong>请求体缓存机制导致的引用丢失</strong><br>多位开发者在缓存 Request Body 时遇到问题：当新旧 Key 覆盖或流式处理被打断时，底层 ByteBuffer 丢失了具体的指向引用，导致无法被回收（参考文末 Issue #2408、#2672、#1188）。不过这个问题之前就遇到过，所以调整相关源码，所以这个问题应该不是我遇到的问题。</li>
+<li><strong>请求体缓存机制导致的引用丢失</strong><br>多位开发者在缓存 Request Body 时遇到问题：当新旧 Key 覆盖或流式处理被打断时，底层 ByteBuffer 丢失了具体的指向引用，导致无法被回收（参考文末 Issue #2408、#2672、#1188）。不过这个问题之前就有了解过，所以很早就调整过相关源码，这个问题不是我当前遇到的问题。</li>
 <li><strong>官方修改请求&#x2F;响应体过滤器的原生缺陷</strong><br>部分 Issue 明确指出，在使用官方的 <code>ModifyRequestBodyGatewayFilterFactory</code> 和 <code>ModifyResponseBody</code> 过滤器时，同样会持续遭遇 ByteBuf 泄漏（参考文末 Issue #3376、#3797）。社区给出的唯一可靠解决方案是：无论使用何种拦截或装饰器模式，都必须通过 <code>.doFinally(s -&gt; DataBufferUtils::release)</code> 进行终态兜底释放。</li>
-<li><strong>高并发下的连接&#x2F;流异常中断</strong><br>在面对极高并发或整合特定组件（如 Spring Redis Session）时，网络底层的偶发中断会导致部分响应流未能走完预设的生命周期（参考文末 Issue #664、#2384、#3033、#2377）。这不仅会抛出内存泄漏警告，在极端情况下还会直接触发 <code>OutOfDirectMemoryError</code>。在进行的 500 万次高并发压测中，我确实观察到了极小概率（小于 10 次）的 Netty 泄漏报错，这说明偶发网络异常也是泄漏推手之一。</li>
+<li><strong>高并发下的连接&#x2F;流异常中断</strong><br>在面对极高并发或整合特定组件（如 Spring Redis Session）时，网络底层的偶发中断会导致部分响应流未能走完预设的生命周期（参考文末 Issue #664、#2384、#3033、#2377）。这不仅会抛出内存泄漏警告，在极端情况下还会直接触发 <code>OutOfDirectMemoryError</code>。我在进行的 500 万次高并发压测中，我确实观察到了极小概率（小于 10 次）的 Netty 泄漏报错，这说明偶发网络异常也是泄漏推手之一。</li>
 </ol>
 <p>综合来看，这类问题本质上是由复杂的响应式链路、异常流中断以及 Gateway 自身过滤链处理机制交织导致的底层内存引用计数未能彻底清零。</p>
 <h2 id="4-解决方案与实施策略"><a href="#4-解决方案与实施策略" class="headerlink" title="4. 解决方案与实施策略"></a>4. 解决方案与实施策略</h2><p>排查至此，在短期内团队无法对当前项目进行破坏性依赖升级（如跨大版本升级 Gateway 以获取官方补丁）的前提下，我决定从 Netty 的底层内存分配策略层面进行干预。</p>
@@ -284,10 +284,7 @@
 <p>后续计划在现有的开发规范中引入更严格的静态代码检查规则，同时推进基础设施层的升级。将业务逻辑与基础设施代码进一步解耦，以减少业务系统直面底层 <code>DataBuffer</code> 管理带来的心智负担与风险。</p>
 <hr>
 <h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
-<li><ul>
 <li><a target="_blank" rel="noopener" href="https://github.com/reactor/reactor-netty/issues/1188">Reactor Netty Issue #1188: HttpClient: LEAK: ByteBuf.release() was not called before it’s garbage-collected</a></li>
-</ul>
-</li>
 <li><a target="_blank" rel="noopener" href="https://github.com/reactor/reactor-netty/issues/2377">Reactor Netty Issue #2377: Memory leak when using with spring redis session</a></li>
 <li><a target="_blank" rel="noopener" href="https://github.com/reactor/reactor-netty/issues/2384">Reactor Netty Issue #2384: LEAK: ByteBuf.release() in Spring Cloud Gateway</a></li>
 <li><a target="_blank" rel="noopener" href="https://github.com/spring-cloud/spring-cloud-gateway/issues/664">Spring Cloud Gateway Issue #664: Memory leak and sockets leak issue &amp; OutOfDirectMemoryError</a></li>
