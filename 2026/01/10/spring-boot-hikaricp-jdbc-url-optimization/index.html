@@ -249,7 +249,7 @@
 <li><strong><code>connectTimeout=5000</code>：</strong> 限制建立初始 TCP 连接的最长等待时间为 5 秒。</li>
 <li><strong><code>socketTimeout=15000</code>：</strong> 限制发送 SQL 后等待数据库网络响应的最长时间为 15 秒，避免应用线程被假死的连接彻底耗尽。</li>
 </ul>
-<h2 id="复盘与架构演进反思-Retrospective-Evolution"><a href="#复盘与架构演进反思-Retrospective-Evolution" class="headerlink" title="复盘与架构演进反思 (Retrospective &amp; Evolution)"></a>复盘与架构演进反思 (Retrospective &amp; Evolution)</h2><ul>
+<h2 id="复盘与架构演进反思"><a href="#复盘与架构演进反思" class="headerlink" title="复盘与架构演进反思"></a>复盘与架构演进反思</h2><ul>
 <li><strong>网络拓扑对长连接的决定性：</strong> 数据库连接并不单单是连接池与数据库服务器端的内部事务。在云原生环境中，应用到数据库之间的流量通常会穿透 LB、NAT 网关或容器网络组件。连接池的探活与超时配置，必须以整条物理拓扑中最短板的网络设备策略（如 NAT 240s 限制）为基准进行对齐。</li>
 <li><strong>防御性配置的必要性：</strong> 依赖 <code>socketTimeout</code> 与 <code>connectTimeout</code> 是应对网络分区、丢包等复杂环境的底层防线。缺失这些配置，应用层极易因底层 TCP 重传机制导致线程长时间挂起，最终引发系统的级联雪崩。</li>
 <li><strong>下一步行动：</strong> 当前仅依靠错误日志来暴露连接池问题存在严重的滞后性。后续计划在 Prometheus 中增加对 HikariCP <code>ActiveConnections</code> 和 <code>IdleConnections</code> 的监控大盘，结合网络层面的重传率指标，实现对网络层劣化的提前感知。</li>
