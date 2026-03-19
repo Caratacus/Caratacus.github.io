@@ -457,7 +457,6 @@
 </ul>
 
         </div>
-
         
             <section class="post-copyright">
                 <div class="post-copyright-avatar">
@@ -507,6 +506,28 @@
                 <a href="/">home</a>
             </div>
         </section>
+
+        <!-- Comments -->
+        
+    <div id="comments">
+        <div id="disqus_thread"></div>
+        <script>
+            var disqus_shortname = 'caratacus';
+            var disqus_config = function () {
+                this.page.url = 'https://caratacus.github.io/2026/03/06/k8s-java-oom-glibc-fragmentation/';
+                this.page.identifier = '2026/03/06/k8s-java-oom-glibc-fragmentation/';
+            };
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+
+
+
         <section class="post-nav">
             
                 <a class="prev" rel="prev" href="/2026/03/09/k8s-zgc-memory-rss-spurious-high/">容器环境下 G1 与 ZGC 内存统计差异与虚高溯源</a>
@@ -515,8 +536,6 @@
             <a class="next" rel="next" href="/2026/03/04/spring-cloud-gateway-memory-leak-troubleshooting-part1/">Spring Cloud Gateway 堆外内存泄漏排查（上）</a>
             
         </section>
-
-
     </article>
 </div>
 

@@ -271,7 +271,6 @@
 <p>这也提醒了我，在处理涉及多个网络链路（如同时连接 Discord WebSocket 和第三方 REST API）的复杂应用时，需要更仔细地梳理每一层网络请求的走向，避免产生意料之外的代理拦截。</p>
 
         </div>
-
         
             <section class="post-copyright">
                 <div class="post-copyright-avatar">
@@ -317,6 +316,28 @@
                 <a href="/">home</a>
             </div>
         </section>
+
+        <!-- Comments -->
+        
+    <div id="comments">
+        <div id="disqus_thread"></div>
+        <script>
+            var disqus_shortname = 'caratacus';
+            var disqus_config = function () {
+                this.page.url = 'https://caratacus.github.io/2026/03/02/openclaw-discord-network-issue-mac/';
+                this.page.identifier = '2026/03/02/openclaw-discord-network-issue-mac/';
+            };
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+
+
+
         <section class="post-nav">
             
                 <a class="prev" rel="prev" href="/2026/03/02/observations-on-ai-programming-tools/">当Claude Code来敲门：AI狂飙时代，一个Java开发者的重塑 🔐</a>
@@ -325,8 +346,6 @@
             <a class="next" rel="next" href="/2026/02/27/gradle-version-catalog-migration/">使用 Gradle Version Catalog (TOML) 统一管理项目版本</a>
             
         </section>
-
-
     </article>
 </div>
 
