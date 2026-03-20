@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Caratacus">
+
+
+
+
+
+<title>业务复盘：告别无限递归，用 MPTT 模型重塑课程存储 | Caratacus&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<!-- Mermaid Config -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const pagebody = document.getElementsByTagName('body')[0]
+
+            function setTheme(status) {
+
+                if (status === 'dark') {
+                    window.sessionStorage.theme = 'dark'
+                    pagebody.classList.add('dark-theme');
+
+                } else {
+                    window.sessionStorage.theme = 'light'
+                    pagebody.classList.remove('dark-theme');
+                }
+            };
+
+            setTheme(window.sessionStorage.theme || 'light')
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Caratacus&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Caratacus&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">
+                    <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4.5 17.27q-.213 0-.356-.145T4 16.768t.144-.356t.356-.143h15q.213 0 .356.144q.144.144.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.144T4 11.999t.144-.356t.356-.143h15q.213 0 .356.144t.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.143Q4 7.443 4 7.23t.144-.356t.356-.143h15q.213 0 .356.144T20 7.23t-.144.356t-.356.144z"/></svg>
+                    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="m12 12.708l-5.246 5.246q-.14.14-.344.15t-.364-.15t-.16-.354t.16-.354L11.292 12L6.046 6.754q-.14-.14-.15-.344t.15-.364t.354-.16t.354.16L12 11.292l5.246-5.246q.14-.14.345-.15q.203-.01.363.15t.16.354t-.16.354L12.708 12l5.246 5.246q.14.14.15.345q.01.203-.15.363t-.354.16t-.354-.16z"/></svg>
+                </div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if (toggleMenu.classList.contains("active")) {
+            toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        } else {
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">业务复盘：告别无限递归，用 MPTT 模型重塑课程存储</h1>
+            
+                <div class="post-meta">
+                    
+
+                    
+                    
+                        <span class="post-category">
+                    标签：
+                            
+                                <a href="/categories/Architecture/">Architecture</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <p>趁周末时间，我复盘了之前公司课程目录演变过程，这里做个记录，温故而知新。</p>
+<p>本文讨论的 <strong>MPTT（Modified Preorder Tree Traversal，修改过的先序遍历树）</strong> 也被称为<strong>嵌套集模型（Nested Set Model）</strong> 或<strong>左右值模型</strong>，是一种在关系型数据库中高效存储和查询树形结构数据的方案。</p>
+<h2 id="传统树形结构痛点"><a href="#传统树形结构痛点" class="headerlink" title="传统树形结构痛点"></a>传统树形结构痛点</h2><p>回顾当时重构公司内部的在线教育系统时，我们面临着一个棘手的性能瓶颈：随着课程各个层级数据的增长，课程内容的加载成了当时在线教育系统一个绕不开的性能瓶颈。</p>
+<p>一个传统的课程目录包含层层嵌套的结构（课程 -&gt; 章节（多级） -&gt; 小节 -&gt; 学习任务）。前端在渲染时，需要一次性获取整棵“课程树”，并在各类业务场景中频繁统计节点的子任务数量。</p>
+<p>在初期的架构设计中，我们采用了直觉上最符合人类直觉的邻接表模型，即经典的 <code>id</code> + <code>pid</code> 结构。每个节点只知道自己的“父”是谁。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 传统 PID 课程目录表结构</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> course_container_pid (</span><br><span class="line">    id <span class="type">BIGINT</span> <span class="keyword">PRIMARY KEY</span> COMMENT <span class="string">&#x27;主键ID&#x27;</span>,</span><br><span class="line">    pid <span class="type">BIGINT</span> <span class="keyword">NOT NULL</span> <span class="keyword">DEFAULT</span> <span class="number">0</span> COMMENT <span class="string">&#x27;父节点ID，0代表根节点&#x27;</span>,</span><br><span class="line">    name <span class="type">VARCHAR</span>(<span class="number">100</span>) COMMENT <span class="string">&#x27;节点名称（如：第一章、课时1）&#x27;</span>,</span><br><span class="line">    sort <span class="type">INT</span> COMMENT <span class="string">&#x27;同级节点排序&#x27;</span>,</span><br><span class="line">    INDEX idx_pid (pid)</span><br><span class="line">) COMMENT <span class="string">&#x27;传统 PID 课程目录表&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>在系统运行初期，这种结构表现得十分轻量。然而，随着数据量级逼近千万级别，该模型的劣势彻底暴露：</p>
+<ul>
+<li><strong>灾难级的读取性能：</strong> 获取完整的嵌套目录时，由于无法预知子孙节点的 ID，必须在应用层使用递归逻辑。深层级的目录会导致 N+1 查询，严重消耗数据库 CPU 资源。</li>
+<li><strong>低效的树形统计：</strong> 若要统计某一章节下包含多少个底层的学习任务，必须把该章节下的整棵子树全部查出并在内存中遍历计算，无法通过单条 SQL 高效聚合。</li>
+</ul>
+<h2 id="寻找关系型数据库中的树形解法"><a href="#寻找关系型数据库中的树形解法" class="headerlink" title="寻找关系型数据库中的树形解法"></a>寻找关系型数据库中的树形解法</h2><p>为了解决“读”的危机，我们开始尝试其他的方式来解决这个问题。在查阅了大量关系型数据库存储树形结构的资料，最终决定引入数据库专家 Joe Celko 提出的 <strong>MPTT（Modified Preorder Tree Traversal，修改过的先序遍历树）模型</strong>，也常被称为左右值树（Nested Set Model）。</p>
+<p>MPTT 是一种“降维打击”的方案。它抛弃了只找父的思路，利用深度优先的先序遍历，为树中的每一个节点分配一个连续的左值（<code>lft</code>）和右值（<code>rgt</code>）。当进入一个节点时分配左值，离开节点时分配右值。</p>
+<p>为了直观呈现这种关系，如下的 MPTT 坐标系流转图：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">                       [1] 课程: 书名 [14]</span><br><span class="line">                                 |</span><br><span class="line">             ----------------------------------------</span><br><span class="line">             |                                      |</span><br><span class="line">        [2] 第一章 [7]                         [8] 第二章 [13]</span><br><span class="line">             |                                      |</span><br><span class="line">      ---------------                        ---------------</span><br><span class="line">      |             |                        |             |</span><br><span class="line">[3] 课时1 [4]  [5] 课时2 [6]           [9] 课时3 [10] [11] 课时4 [12]</span><br></pre></td></tr></table></figure>
+
+<p>MPTT 模型的结构设计主要解决了传统模型必须依赖递归才能查全层级关系的痛点，它确立了一个核心魔法（铁律）：<strong>边界包含</strong>。即任何子孙节点的 <code>lft</code> 和 <code>rgt</code>，必定被完美包裹在其所有祖先节点的 <code>lft</code> 和 <code>rgt</code> 之间。</p>
+<h3 id="混合架构：纯-MPTT-的妥协与改良"><a href="#混合架构：纯-MPTT-的妥协与改良" class="headerlink" title="混合架构：纯 MPTT 的妥协与改良"></a>混合架构：纯 MPTT 的妥协与改良</h3><p>原生的 MPTT 虽然在获取整棵树时性能无敌，但在某些特定场景下却显得力不从心。因此，我在最终的 <code>CourseContainer</code> 实体设计中，保留了 <code>pid</code> 和 <code>layer</code>（层级），做了一次<strong>混合型变种</strong>设计：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- MPTT 左右值课程容器表结构 (结合了邻接表特性)</span></span><br><span class="line"><span class="keyword">CREATE TABLE</span> course_container (</span><br><span class="line">    id <span class="type">BIGINT</span> <span class="keyword">PRIMARY KEY</span> COMMENT <span class="string">&#x27;主键ID&#x27;</span>,</span><br><span class="line">    rid <span class="type">BIGINT</span> <span class="keyword">NOT NULL</span> COMMENT <span class="string">&#x27;Root ID，根节点(课程)ID，用于隔离整棵树&#x27;</span>,</span><br><span class="line">    pid <span class="type">BIGINT</span> <span class="keyword">NOT NULL</span> <span class="keyword">DEFAULT</span> <span class="number">0</span> COMMENT <span class="string">&#x27;冗余的父节点ID，方便直系上下级查询&#x27;</span>,</span><br><span class="line">    lft <span class="type">INT</span> <span class="keyword">NOT NULL</span> COMMENT <span class="string">&#x27;左值&#x27;</span>,</span><br><span class="line">    rgt <span class="type">INT</span> <span class="keyword">NOT NULL</span> COMMENT <span class="string">&#x27;右值&#x27;</span>,</span><br><span class="line">    layer <span class="type">INT</span> <span class="keyword">NOT NULL</span> COMMENT <span class="string">&#x27;层级深度&#x27;</span>,</span><br><span class="line">    name <span class="type">VARCHAR</span>(<span class="number">100</span>) COMMENT <span class="string">&#x27;节点名称&#x27;</span>,</span><br><span class="line">    INDEX idx_rid_lft_rgt (rid, lft, rgt)</span><br><span class="line">) COMMENT <span class="string">&#x27;MPTT 课程容器表&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>这种空间换时间的设计弥补了纯左右值树的短板：</p>
+<ol>
+<li>彻底废弃了用来维持顺序的 <code>sort</code> 字段（同级节点的顺序天然由 <code>lft</code> 大小决定）。</li>
+<li>引入了关键的 <code>rid</code>（Root ID）字段。在多租户、多课程并存的在线教育系统中，<code>rid</code> 是控制数据库锁粒度的核心。</li>
+</ol>
+<h2 id="解决方案与实施"><a href="#解决方案与实施" class="headerlink" title="解决方案与实施"></a>解决方案与实施</h2><p>在确定使用 MPTT 的树形结构后，课程的增删改查逻辑发生了翻天覆地的变化。以下在实际代码中实现的各个核心方法及其底层 SQL 映射。</p>
+<h3 id="极速读取，消灭递归"><a href="#极速读取，消灭递归" class="headerlink" title="极速读取，消灭递归"></a>极速读取，消灭递归</h3><p>在 MPTT 模型下，我们彻底抛弃了 Java 层的递归调用。所有的嵌套关系读取都变成了连续区间的数学扫描。</p>
+<p><strong><code>getChildren</code> (拉取任意子树)</strong><br>利用包裹特性，查出某节点下的所有子孙节点只需一次区间扫描，且结果天然按照 <code>lft</code> 升序排列，即正确的前序遍历顺序。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 参数1: rid (根节点ID)</span></span><br><span class="line"><span class="comment">-- 参数2: node.lft (当前节点左值)</span></span><br><span class="line"><span class="comment">-- 参数3: node.rgt (当前节点右值)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> course_container</span><br><span class="line"><span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> lft <span class="operator">&gt;</span> ? <span class="keyword">AND</span> rgt <span class="operator">&lt;</span> ?</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> lft <span class="keyword">ASC</span>;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>注意</strong>：使用 <code>lft &gt; ? AND rgt &lt; ?</code> 而非 <code>BETWEEN</code>，是为了排除当前节点本身，只获取子孙节点。</p>
+</blockquote>
+<p><strong><code>getLinealChildren</code> (精准获取直系子节点)</strong><br>这是混合模型发挥作用的地方。纯 MPTT 获取直系子节点需要复杂的子查询，但通过冗余的 <code>pid</code> 字段，可以轻松实现：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 参数1: rid (根节点ID)</span></span><br><span class="line"><span class="comment">-- 参数2: node.id (当前节点ID，作为父节点)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> course_container</span><br><span class="line"><span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> pid <span class="operator">=</span> ?</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> lft <span class="keyword">ASC</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>getLeaves</code> (精准定位底层任务节点)</strong><br>叶子节点的特征是内部没有任何子节点，因此它的右值必定紧随左值（差值为 1）。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 参数1: rid (根节点ID)</span></span><br><span class="line"><span class="comment">-- 参数2: node.lft (当前节点左值)</span></span><br><span class="line"><span class="comment">-- 参数3: node.rgt (当前节点右值)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> course_container</span><br><span class="line"><span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> lft <span class="operator">&gt;</span> ? <span class="keyword">AND</span> rgt <span class="operator">&lt;</span> ? <span class="keyword">AND</span> rgt <span class="operator">=</span> lft <span class="operator">+</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>getLeavesCount</code> (底层任务节点数量)</strong><br>统计某节点下的叶子节点数量，用于显示”包含 X 个学习任务”。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 参数1: rid (根节点ID)</span></span><br><span class="line"><span class="comment">-- 参数2: node.lft (当前节点左值)</span></span><br><span class="line"><span class="comment">-- 参数3: node.rgt (当前节点右值)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="built_in">count</span>(<span class="number">1</span>) <span class="keyword">FROM</span> course_container</span><br><span class="line"><span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> lft <span class="operator">&gt;</span> ? <span class="keyword">AND</span> rgt <span class="operator">&lt;</span> ? <span class="keyword">AND</span> rgt <span class="operator">=</span> lft <span class="operator">+</span> <span class="number">1</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>getChildrenCount</code> (子节点总数统计)</strong><br>利用左右值的差值公式，可以直接在内存中计算出任意节点包含的后代节点总数，彻底免除数据库查询。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 节点总数 = (右值 - 左值 - 1) / 2</span></span><br><span class="line"><span class="comment">// 原理：每个节点占用 2 个值（左+右），减去自己占用的 2 个值，再除以 2</span></span><br><span class="line"><span class="keyword">return</span> (node.getRight() - node.getLeft() - <span class="number">1</span>) / <span class="number">2</span>;</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>getParents</code> (逆向获取祖先路径)</strong><br>查出当前节点到根节点的完整面包屑导航，只需反向利用包裹关系：祖先节点的左右值必定包裹当前节点。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 参数1: rid (根节点ID)</span></span><br><span class="line"><span class="comment">-- 参数2: node.lft (当前节点左值)</span></span><br><span class="line"><span class="comment">-- 参数3: node.rgt (当前节点右值)</span></span><br><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> course_container</span><br><span class="line"><span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> lft <span class="operator">&lt;</span> ? <span class="keyword">AND</span> rgt <span class="operator">&gt;</span> ?</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> lft <span class="keyword">ASC</span>;</span><br></pre></td></tr></table></figure>
+
+<h3 id="承受“写放大”的阵痛"><a href="#承受“写放大”的阵痛" class="headerlink" title="承受“写放大”的阵痛"></a>承受“写放大”的阵痛</h3><p>MPTT 的读取达到了极致，但也伴随着维护成本的剧增。由于坐标系是连续的，任何节点的变动都会引发空间的重新分配。</p>
+<p><strong><code>addNode</code> &#x2F; <code>appendNode</code> (节点新增：撑开连续空间)</strong><br>为了在树中插入新节点，必须把目标位置后续所有节点的左右值都推后 2 个单位，为其”腾出空档”。这里存在严重的<strong>写放大</strong>，每一次插入都会导致后续大量记录的 <code>UPDATE</code>。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 步骤1: 为新节点腾出空间（更新右值）</span></span><br><span class="line"><span class="comment">-- 参数1: rid, 参数2: targetRgt (目标位置的右值)</span></span><br><span class="line"><span class="keyword">UPDATE</span> course_container <span class="keyword">SET</span> rgt <span class="operator">=</span> rgt <span class="operator">+</span> <span class="number">2</span> <span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> rgt <span class="operator">&gt;=</span> ?;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 步骤2: 为新节点腾出空间（更新左值）</span></span><br><span class="line"><span class="comment">-- 参数1: rid, 参数2: targetRgt (目标位置的右值)</span></span><br><span class="line"><span class="keyword">UPDATE</span> course_container <span class="keyword">SET</span> lft <span class="operator">=</span> lft <span class="operator">+</span> <span class="number">2</span> <span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> lft <span class="operator">&gt;=</span> ?;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 步骤3: 插入新节点</span></span><br><span class="line"><span class="comment">-- 新节点的 lft = targetRgt, rgt = targetRgt + 1</span></span><br><span class="line"><span class="keyword">INSERT INTO</span> course_container (rid, pid, lft, rgt, layer, name)</span><br><span class="line"><span class="keyword">VALUES</span> (?, ?, ?, ?, ?, ?);</span><br></pre></td></tr></table></figure>
+
+<p><strong><code>deleteNode</code> (节点删除：物理删除与空间缝合)</strong><br>删除节点时，除了物理删除目标区间内的所有数据，还需要将后续节点的左右值减去被删除的跨度，像拉链一样缝合断裂的数值空间。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 步骤1: 计算被删除子树的跨度（在应用层计算）</span></span><br><span class="line"><span class="comment">-- span = node.rgt - node.lft + 1</span></span><br><span class="line"></span><br><span class="line"><span class="comment">-- 步骤2: 删除目标节点及其所有子孙节点</span></span><br><span class="line"><span class="comment">-- 参数1: rid, 参数2: node.lft, 参数3: node.rgt</span></span><br><span class="line"><span class="keyword">DELETE</span> <span class="keyword">FROM</span> course_container</span><br><span class="line"><span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> lft <span class="operator">&gt;=</span> ? <span class="keyword">AND</span> rgt <span class="operator">&lt;=</span> ?;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 步骤3: 缝合右侧节点的右值</span></span><br><span class="line"><span class="comment">-- 参数1: rid, 参数2: span (跨度值), 参数3: node.rgt</span></span><br><span class="line"><span class="keyword">UPDATE</span> course_container <span class="keyword">SET</span> rgt <span class="operator">=</span> rgt <span class="operator">-</span> ? <span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> rgt <span class="operator">&gt;</span> ?;</span><br><span class="line"></span><br><span class="line"><span class="comment">-- 步骤4: 缝合右侧节点的左值</span></span><br><span class="line"><span class="comment">-- 参数1: rid, 参数2: span (跨度值), 参数3: node.rgt</span></span><br><span class="line"><span class="keyword">UPDATE</span> course_container <span class="keyword">SET</span> lft <span class="operator">=</span> lft <span class="operator">-</span> ? <span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> lft <span class="operator">&gt;</span> ?;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>注意</strong>：删除操作会级联删除所有子孙节点，如果需要保留子节点（只删除当前节点），则需要先移动子节点再删除。</p>
+</blockquote>
+<h2 id="MPTT-VS-传统-PID"><a href="#MPTT-VS-传统-PID" class="headerlink" title="MPTT VS 传统 PID"></a>MPTT VS 传统 PID</h2><p>通过前面的分析，我们来进行直观的对比，从查、增、改三种场景分析两种模式的差异。</p>
+<h3 id="⚔️-Round-1：查（获取整棵树或子树）"><a href="#⚔️-Round-1：查（获取整棵树或子树）" class="headerlink" title="⚔️ Round 1：查（获取整棵树或子树）"></a>⚔️ Round 1：查（获取整棵树或子树）</h3><ul>
+<li><p><strong>传统 PID：</strong><br>除非使用<code>WITH RECURSIVE</code> 这种关系型数据库支持的递归 SQL，否则单条常规 SQL 根本查不出来。这会导致灾难级的读取性能和 N+1 查询问题。</p>
+</li>
+<li><p><strong>MPTT：</strong><br>绝对的统治区。因为子孙的左右值必定在祖先的左右值之间，一条极其简单的范围查询瞬间搞定：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> <span class="operator">*</span> <span class="keyword">FROM</span> course_container</span><br><span class="line"><span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> lft <span class="operator">&gt;</span> ? <span class="keyword">AND</span> rgt <span class="operator">&lt;</span> ?</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> lft <span class="keyword">ASC</span>;</span><br></pre></td></tr></table></figure>
+<p><strong>胜者：MPTT（赢得毫无悬念）</strong></p>
+</li>
+</ul>
+<h3 id="⚔️-Round-2：增（新增节点）"><a href="#⚔️-Round-2：增（新增节点）" class="headerlink" title="⚔️ Round 2：增（新增节点）"></a>⚔️ Round 2：增（新增节点）</h3><ul>
+<li><p><strong>传统 PID：</strong><br>简单粗暴</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">INSERT INTO</span> course_container_pid (name, pid) <span class="keyword">VALUES</span> (<span class="string">&#x27;新节点&#x27;</span>, <span class="number">2</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>MPTT：</strong><br>繁琐且危险。要在树中间硬生生塞入一个节点，你必须给它腾出“数值空间”。这意味着新节点右侧<strong>所有</strong>节点的 <code>lft</code> 和 <code>rgt</code> 都要加上跨度。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> course_container <span class="keyword">SET</span> rgt <span class="operator">=</span> rgt <span class="operator">+</span> <span class="number">2</span> <span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> rgt <span class="operator">&gt;=</span> ?;</span><br><span class="line"><span class="keyword">UPDATE</span> course_container <span class="keyword">SET</span> lft <span class="operator">=</span> lft <span class="operator">+</span> <span class="number">2</span> <span class="keyword">WHERE</span> rid <span class="operator">=</span> ? <span class="keyword">AND</span> lft <span class="operator">&gt;=</span> ?;</span><br><span class="line"><span class="keyword">INSERT INTO</span> course_container (rid, pid, lft, rgt, layer, ...) <span class="keyword">VALUES</span> (?, ?, ?, ?, ?, ...);</span><br></pre></td></tr></table></figure>
+<p>在高并发下，这种大范围的 UPDATE 极易引发锁表和死锁。<br><strong>胜者：传统 PID</strong></p>
+</li>
+</ul>
+<h3 id="⚔️-Round-3：改（移动节点）"><a href="#⚔️-Round-3：改（移动节点）" class="headerlink" title="⚔️ Round 3：改（移动节点）"></a>⚔️ Round 3：改（移动节点）</h3><ul>
+<li><p><strong>传统 PID：</strong><br>依然是优雅的一行代码。因为子节点是跟着当前节点走的，改一下 <code>pid</code> 就完事了。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">UPDATE</span> course_container_pid <span class="keyword">SET</span> pid <span class="operator">=</span> <span class="number">1</span> <span class="keyword">WHERE</span> id <span class="operator">=</span> <span class="number">3</span>;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>MPTT：</strong><br>需要经历：计算跨度 → 闭合原位置空洞 → 开辟新位置空洞 → 填入子树并加上偏移量。这通常需要在一个事务里执行 5-7 条 SQL，极其消耗性能。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">-- 伪代码流程（实际实现需要处理边界情况和锁机制）：</span></span><br><span class="line"><span class="comment">-- 1. 锁定源子树和目标位置</span></span><br><span class="line"><span class="comment">-- 2. 计算源子树跨度 span = srcRgt - srcLft + 1</span></span><br><span class="line"><span class="comment">-- 3. 临时将源子树的左右值设为负数（避免后续更新影响）</span></span><br><span class="line"><span class="comment">-- 4. 闭合原位置空洞（类似 deleteNode 的缝合操作）</span></span><br><span class="line"><span class="comment">-- 5. 在目标位置腾出空间（类似 addNode 的撑开操作）</span></span><br><span class="line"><span class="comment">-- 6. 将源子树移动到新位置，并加上偏移量</span></span><br><span class="line"><span class="comment">-- 7. 释放锁</span></span><br></pre></td></tr></table></figure>
+<p><strong>胜者：传统 PID</strong></p>
+</li>
+</ul>
+<p><strong>对比</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left">维度</th>
+<th align="left">传统 PID (邻接表)</th>
+<th align="left">MPTT (预排序遍历树)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>查询整棵树&#x2F;子树</strong></td>
+<td align="left">复杂，性能较差</td>
+<td align="left"><strong>极简，性能极高</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>查询祖先路径</strong></td>
+<td align="left">复杂，性能较差</td>
+<td align="left"><strong>极简，性能极高</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>查询子节点数量</strong></td>
+<td align="left">需要 COUNT 查询</td>
+<td align="left"><strong>O(1) 内存计算</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>插入单节点</strong></td>
+<td align="left"><strong>极简</strong></td>
+<td align="left">复杂，引发大范围锁表</td>
+</tr>
+<tr>
+<td align="left"><strong>移动节点&#x2F;子树</strong></td>
+<td align="left"><strong>极简</strong></td>
+<td align="left">极度复杂，严重影响并发写入</td>
+</tr>
+<tr>
+<td align="left"><strong>删除节点&#x2F;子树</strong></td>
+<td align="left"><strong>简单</strong>（需递归删子节点）</td>
+<td align="left">复杂，需缝合空间</td>
+</tr>
+</tbody></table>
+<h2 id="其他树形方案对比"><a href="#其他树形方案对比" class="headerlink" title="其他树形方案对比"></a>其他树形方案对比</h2><p>除了 MPTT 和传统 PID，关系型数据库中还有其他几种常见的树形结构存储方案：</p>
+<table>
+<thead>
+<tr>
+<th align="left">方案</th>
+<th align="left">核心思想</th>
+<th align="left">优点</th>
+<th align="left">缺点</th>
+<th align="left">适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>Closure Table</strong></td>
+<td align="left">单独建表存储所有祖先-后代关系</td>
+<td align="left">所有操作都简单，支持复杂查询</td>
+<td align="left">空间占用大（O(n²)）</td>
+<td align="left">关系查询频繁、写入较少</td>
+</tr>
+<tr>
+<td align="left"><strong>Path Enumeration</strong></td>
+<td align="left">存储完整路径如 <code>/1/4/7/</code></td>
+<td align="left">查询祖先极其简单</td>
+<td align="left">路径长度受限，移动节点需更新所有后代</td>
+<td align="left">层级固定、不常移动</td>
+</tr>
+<tr>
+<td align="left"><strong>Materialized Path</strong></td>
+<td align="left">类似 Path，用数组或编码</td>
+<td align="left">比 Path 更灵活</td>
+<td align="left">实现复杂</td>
+<td align="left">需要灵活的层级管理</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>选型建议</strong>：如果读远多于写，且需要频繁查询整树&#x2F;子树，MPTT 是最佳选择；如果写入频繁或需要频繁移动节点，传统 PID 配合 <code>WITH RECURSIVE</code> 可能更合适。</p>
+</blockquote>
+<h2 id="复盘与反思"><a href="#复盘与反思" class="headerlink" title="复盘与反思"></a>复盘与反思</h2><p>将课程目录从传统的 PID 模型重构为 MPTT 左右值模型，本质上是一次**“用高昂的写入计算和批量更新成本，换取读取时极致性能”**的工程妥协。</p>
+<p>课程结构的调整不仅暴露了 MPTT 在并发写入时的致命软肋，还增加了维护 <code>pid</code>、<code>layer</code> 等冗余字段的同步成本。为此，在生产环境中确立了两条强制底线：</p>
+<ol>
+<li><strong>确定更新范围：</strong> 利用 <code>rid</code>（课程 Root ID）进行分区隔离。每一次 <code>UPDATE</code> 都强制附带 <code>WHERE rid = ?</code>，确保一门课程的目录更新，绝对不会引起全表的锁升级冲突。</li>
+<li><strong>强制分布式锁机制：</strong> 在执行 <code>addNode</code>、<code>deleteNode</code>、<code>appendNode</code> 等写入操作时，必须施加分布式排他锁。在并发环境下，左右值计算一旦出现错位，整棵树的数据结构将永久性崩塌，所以必须串行化写入。</li>
+</ol>
+<p>MPTT 模型仅适用于典型的<strong>读多写少</strong>场景。在后续的演进中，我们在后台异步预加载热点课程的树形 JSON，从而进一步降低关系型数据库的承载压力，实现更极致的接口响应。</p>
+<p>最后，虽然 MPTT 的理论很优秀，但是在我们实践下来还是遇到了不少挑战（特别是增加了增、删、改的复杂度），不过最终都得到了完善的解决。根据当时的场景，为了追求极致的读性能，这一切都是值得的。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p><strong>MPTT 适用场景：</strong></p>
+<ul>
+<li>读多写少（如：内容管理、目录结构、评论系统）</li>
+<li>需要频繁查询整棵树或子树</li>
+<li>需要快速统计节点数量</li>
+<li>层级相对固定，节点移动不频繁</li>
+</ul>
+<p><strong>MPTT 不适用场景：</strong></p>
+<ul>
+<li>写入频繁的实时系统</li>
+<li>需要频繁移动节点的场景</li>
+<li>并发写入要求高的系统（除非有完善的锁机制）</li>
+</ul>
+<p>没有最好的模型，只有最合适的选择。</p>
+
+        </div>
+        
+            <section class="post-copyright">
+                <div class="post-copyright-avatar">
+                    <img src="/image/avatar.jpeg" alt="avatar">
+                </div>
+                <div class="post-copyright-info">
+                    <p class="copyright-item">
+                        <span>说明:</span>
+                        <span>本站点博文除特殊说明转载自xxx外，均为博主原创内容</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>转载请注明来源:</span>
+                        <span>Caratacus&#39;s Blog-《业务复盘：告别无限递归，用 MPTT 模型重塑课程存储》</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>本文链接地址:</span>
+                        <span><a href="https://caratacus.github.io/2026/03/21/mptt-nested-set-model-architecture-review/">https://caratacus.github.io/2026/03/21/mptt-nested-set-model-architecture-review/</a></span>
+                    </p>
+                </div>
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Database/"># Database</a>
+                    
+                        <a href="/tags/SQL/"># SQL</a>
+                    
+                        <a href="/tags/MPTT/"># MPTT</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+
+        <!-- Comments -->
+        
+    <div id="comments">
+        <div id="disqus_thread"></div>
+        <script>
+            var disqus_shortname = 'caratacus';
+            var disqus_config = function () {
+                this.page.url = 'https://caratacus.github.io/2026/03/21/mptt-nested-set-model-architecture-review/';
+                this.page.identifier = '2026/03/21/mptt-nested-set-model-architecture-review/';
+            };
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+
+
+
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2026/03/12/spring-cloud-gateway-memory-leak-troubleshooting-part2/">Spring Cloud Gateway 堆外内存泄漏排查（下）</a>
+            
+        </section>
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© <a href="https://github.com/Caratacus" target="_blank">Caratacus</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
