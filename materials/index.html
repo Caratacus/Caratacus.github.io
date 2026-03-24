@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Caratacus">
+
+
+
+
+
+<title>Materials | Caratacus&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<!-- Mermaid Config -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const pagebody = document.getElementsByTagName('body')[0]
+
+            function setTheme(status) {
+
+                if (status === 'dark') {
+                    window.sessionStorage.theme = 'dark'
+                    pagebody.classList.add('dark-theme');
+
+                } else {
+                    window.sessionStorage.theme = 'light'
+                    pagebody.classList.remove('dark-theme');
+                }
+            };
+
+            setTheme(window.sessionStorage.theme || 'light')
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Caratacus&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Caratacus&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">
+                    <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4.5 17.27q-.213 0-.356-.145T4 16.768t.144-.356t.356-.143h15q.213 0 .356.144q.144.144.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.144T4 11.999t.144-.356t.356-.143h15q.213 0 .356.144t.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.143Q4 7.443 4 7.23t.144-.356t.356-.143h15q.213 0 .356.144T20 7.23t-.144.356t-.356.144z"/></svg>
+                    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="m12 12.708l-5.246 5.246q-.14.14-.344.15t-.364-.15t-.16-.354t.16-.354L11.292 12L6.046 6.754q-.14-.14-.15-.344t.15-.364t.354-.16t.354.16L12 11.292l5.246-5.246q.14-.14.345-.15q.203-.01.363.15t.16.354t-.16.354L12.708 12l5.246 5.246q.14.14.15.345q.01.203-.15.363t-.354.16t-.354-.16z"/></svg>
+                </div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if (toggleMenu.classList.contains("active")) {
+            toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        } else {
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <!-- 锁定状态：居中密码输入 -->
+<div class="materials-locked-page" id="materials-locked-page">
+    <div class="materials-lock-container">
+        <h2 class="lock-title">Materials</h2>
+        <p class="lock-desc">此部分是个人的一些笔记，暂不进行传播，感谢理解 ❤️</p>
+        <div class="password-form">
+            <input type="password" id="materials-password-input" class="password-input" placeholder="Enter password" autocomplete="off" />
+            <button id="unlock-btn" class="unlock-btn">Enter</button>
+        </div>
+    </div>
+</div>
+
+<!-- 解锁状态：与 archive 页面相同布局 -->
+<div class="archive-layout materials-unlocked-page" id="materials-unlocked-page" style="display: none;">
+    <!-- 左侧边栏 -->
+    <aside class="archive-sidebar">
+        <div class="sidebar-profile">
+            <img class="sidebar-avatar" src="/image/avatar.jpeg" alt="Caratacus" />
+            <div class="sidebar-nickname">Caratacus</div>
+            <div class="sidebar-desc">Code, Life, and everything in between.</div>
+        </div>
+        <nav class="archive-nav">
+            <a class="archive-nav-item" href="/archives/">
+                <span class="nav-icon">💭</span>
+                <span class="nav-text">Sparks</span>
+            </a>
+            <a class="archive-nav-item" href="/archives/">
+                <span class="nav-icon">📃</span>
+                <span class="nav-text">Blog</span>
+            </a>
+            <a class="archive-nav-item active" href="/materials/">
+                <span class="nav-icon">📄</span>
+                <span class="nav-text">Materials</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 右侧内容区 -->
+    <main class="archive-main">
+        <div class="container">
+            
+<div class="post-wrap archive" style="padding-top: 2rem;">
+    <style>
+        .archive-search-input {
+            width: 100%;
+            padding: 10px 15px;
+            margin-bottom: 2rem;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            box-sizing: border-box;
+            background: transparent;
+            color: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        .archive-search-input:focus {
+            border-color: #a9a9a9;
+        }
+        .dark-theme .archive-search-input {
+            border-color: #555;
+        }
+        .dark-theme .archive-search-input:focus {
+            border-color: #888;
+        }
+    </style>
+    <input type="text" class="archive-search-input" id="materials-search" placeholder="Search posts..." />
+</div>
+<div class="post-wrap archive" id="materials-search-list">
+    
+    
+        
+        
+            <h3>2026 - 03</h3>
+        
+
+        <article class="archive-item">
+            <a class="archive-item-link" href="/2026/03/20/private-my-first-private-note/">我的私密笔记 🔒</a>
+            <span class="archive-item-date">March 20, 2026</span>
+        </article>
+    
+</div>
+
+        </div>
+    </main>
+</div>
+
+<style>
+/* 锁定状态样式 */
+.materials-locked-page {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.materials-lock-container {
+    text-align: center;
+    padding: 3rem 2.5rem;
+    background: var(--bg-color, #fff);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    max-width: 420px;
+    width: 100%;
+}
+
+.dark-theme .materials-lock-container {
+    background: #2d2d2d;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+.lock-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+}
+
+.lock-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--font-color, #333);
+    margin-bottom: 0.75rem;
+}
+
+.dark-theme .lock-title {
+    color: #fff;
+}
+
+.lock-desc {
+    color: #888;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+.dark-theme .lock-desc {
+    color: #777;
+}
+
+.password-form {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.password-input {
+    flex: 1;
+    padding: 0.875rem 1.25rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+    background: transparent;
+    color: inherit;
+}
+
+.password-input:focus {
+    border-color: var(--link-color, #333);
+}
+
+.dark-theme .password-input {
+    border-color: #444;
+}
+
+.dark-theme .password-input:focus {
+    border-color: #888;
+}
+
+.unlock-btn {
+    padding: 0.875rem 1.75rem;
+    background: var(--link-color, #333);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.unlock-btn:hover {
+    opacity: 0.9;
+}
+
+.unlock-btn:active {
+    transform: scale(0.98);
+}
+
+.dark-theme .unlock-btn {
+    background: #fff;
+    color: #333;
+}
+
+.password-error {
+    color: #e74c3c;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+    display: none;
+}
+
+/* 解锁后样式 - 复用 archive 布局 */
+.materials-unlocked-page {
+    display: none;
+}
+
+.materials-unlocked-page.active {
+    display: flex;
+}
+
+/* Archive 布局样式 */
+.archive-layout {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-left: 220px;
+}
+
+.archive-sidebar {
+    position: fixed;
+    left: calc((100vw - 1200px) / 2);
+    top: 100px;
+    width: 180px;
+}
+
+@media (max-width: 1232px) {
+    .archive-sidebar {
+        left: 1rem;
+    }
+    .archive-layout {
+        padding-left: 200px;
+    }
+}
+
+.sidebar-profile {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    margin-bottom: 1rem;
+    background: var(--bg-color, #fff);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.dark-theme .sidebar-profile {
+    background: #2d2d2d;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
+.sidebar-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 0.8rem;
+    border: 3px solid #f0f0f0;
+}
+
+.dark-theme .sidebar-avatar {
+    border-color: #444;
+}
+
+.sidebar-nickname {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--font-color, #333);
+    margin-bottom: 0.3rem;
+}
+
+.dark-theme .sidebar-nickname {
+    color: #fff;
+}
+
+.sidebar-desc {
+    font-size: 0.8rem;
+    color: #888;
+    line-height: 1.4;
+}
+
+.dark-theme .sidebar-desc {
+    color: #777;
+}
+
+.archive-nav {
+    background: var(--bg-color, #fff);
+    border-radius: 12px;
+    padding: 0.5rem 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.dark-theme .archive-nav {
+    background: #2d2d2d;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
+.archive-nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1.2rem;
+    color: var(--font-color, #333);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+}
+
+.dark-theme .archive-nav-item {
+    color: #ccc;
+}
+
+.archive-nav-item:hover {
+    background: rgba(0,0,0,0.04);
+}
+
+.dark-theme .archive-nav-item:hover {
+    background: rgba(255,255,255,0.06);
+}
+
+.archive-nav-item.active {
+    background: rgba(0,0,0,0.06);
+    border-left-color: var(--link-color, #333);
+    font-weight: 500;
+}
+
+.dark-theme .archive-nav-item.active {
+    background: rgba(255,255,255,0.08);
+    border-left-color: #fff;
+}
+
+.nav-icon {
+    margin-right: 0.6rem;
+    font-size: 1rem;
+}
+
+.nav-text {
+    font-size: 0.9rem;
+}
+
+.archive-main {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 768px) {
+    .archive-layout {
+        flex-direction: column;
+        padding-left: 0;
+    }
+
+    .archive-sidebar {
+        position: static;
+        width: 100%;
+        margin-bottom: 1.5rem;
+    }
+
+    .sidebar-profile {
+        display: none;
+    }
+
+    .archive-nav {
+        display: flex;
+        justify-content: center;
+        gap: 0;
+        padding: 0.5rem;
+    }
+
+    .archive-nav-item {
+        padding: 0.5rem 1rem;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 4px;
+    }
+
+    .archive-nav-item.active {
+        border-left-color: transparent;
+        border-bottom-color: var(--link-color, #333);
+    }
+
+    .dark-theme .archive-nav-item.active {
+        border-bottom-color: #fff;
+    }
+}
+
+@media (max-width: 480px) {
+    .password-form {
+        flex-direction: column;
+    }
+
+    .unlock-btn {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var materialsPassword = 'caratacus.github.io';
+    var materialsUnlocked = sessionStorage.getItem('materials-unlocked') === 'true';
+
+    var lockedPage = document.getElementById('materials-locked-page');
+    var unlockedPage = document.getElementById('materials-unlocked-page');
+    var passwordInput = document.getElementById('materials-password-input');
+    var unlockBtn = document.getElementById('unlock-btn');
+    var errorEl = document.getElementById('password-error');
+
+    function unlock() {
+        lockedPage.style.display = 'none';
+        unlockedPage.style.display = 'flex';
+        sessionStorage.setItem('materials-unlocked', 'true');
+
+        // 初始化搜索
+        initSearch('materials-search', 'materials-search-list');
+    }
+
+    // 已解锁则直接显示内容
+    if (materialsUnlocked) {
+        unlock();
+        return;
+    }
+
+    function tryUnlock() {
+        var password = passwordInput.value;
+        if (password === materialsPassword) {
+            errorEl.style.display = 'none';
+            unlock();
+        } else {
+            errorEl.style.display = 'block';
+            passwordInput.value = '';
+            passwordInput.focus();
+        }
+    }
+
+    unlockBtn.addEventListener('click', tryUnlock);
+
+    passwordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            tryUnlock();
+        }
+    });
+
+    passwordInput.addEventListener('input', function() {
+        errorEl.style.display = 'none';
+    });
+
+    passwordInput.focus();
+
+    // 搜索功能
+    function initSearch(inputId, listId) {
+        var searchInput = document.getElementById(inputId);
+        var listContainer = document.getElementById(listId);
+        if (!searchInput || !listContainer) return;
+
+        searchInput.addEventListener('input', function() {
+            var filter = this.value.toLowerCase();
+            var articles = listContainer.querySelectorAll('.archive-item');
+
+            articles.forEach(function(article) {
+                var title = article.querySelector('.archive-item-link').textContent.toLowerCase();
+                article.style.display = title.indexOf(filter) > -1 ? 'flex' : 'none';
+            });
+
+            var yearHeaders = listContainer.querySelectorAll('h3');
+            yearHeaders.forEach(function(header) {
+                var nextEl = header.nextElementSibling;
+                var hasVisible = false;
+                while(nextEl && nextEl.tagName !== 'H3') {
+                    if(nextEl.classList.contains('archive-item') && nextEl.style.display !== 'none') {
+                        hasVisible = true;
+                        break;
+                    }
+                    nextEl = nextEl.nextElementSibling;
+                }
+                header.style.display = hasVisible ? 'block' : 'none';
+            });
+        });
+    }
+});
+</script>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© <a href="https://github.com/Caratacus" target="_blank">Caratacus</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
