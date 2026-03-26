@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Caratacus">
+
+
+
+
+
+<title>SDKMAN + direnv 自动切换 JDK 环境 | Caratacus&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<!-- Mermaid Config -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const pagebody = document.getElementsByTagName('body')[0]
+
+            function setTheme(status) {
+
+                if (status === 'dark') {
+                    window.sessionStorage.theme = 'dark'
+                    pagebody.classList.add('dark-theme');
+
+                } else {
+                    window.sessionStorage.theme = 'light'
+                    pagebody.classList.remove('dark-theme');
+                }
+            };
+
+            setTheme(window.sessionStorage.theme || 'light')
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Caratacus&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Caratacus&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">
+                    <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4.5 17.27q-.213 0-.356-.145T4 16.768t.144-.356t.356-.143h15q.213 0 .356.144q.144.144.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.144T4 11.999t.144-.356t.356-.143h15q.213 0 .356.144t.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.143Q4 7.443 4 7.23t.144-.356t.356-.143h15q.213 0 .356.144T20 7.23t-.144.356t-.356.144z"/></svg>
+                    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="m12 12.708l-5.246 5.246q-.14.14-.344.15t-.364-.15t-.16-.354t.16-.354L11.292 12L6.046 6.754q-.14-.14-.15-.344t.15-.364t.354-.16t.354.16L12 11.292l5.246-5.246q.14-.14.345-.15q.203-.01.363.15t.16.354t-.16.354L12.708 12l5.246 5.246q.14.14.15.345q.01.203-.15.363t-.354.16t-.354-.16z"/></svg>
+                </div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if (toggleMenu.classList.contains("active")) {
+            toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        } else {
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">SDKMAN + direnv 自动切换 JDK 环境</h1>
+            
+                <div class="post-meta">
+                    
+
+                    
+                    
+                        <span class="post-category">
+                    标签：
+                            
+                                <a href="/categories/Configuration/">Configuration</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <p>在多项目并行开发的今天，A 项目用 Java 8，B 项目用 Java 17 已是常态。虽然 <strong>SDKMAN!</strong> 解决了”装”的问题，但”用”的过程依然不够优雅——每次进项目都要手动 <code>sdk use</code>，着实繁琐。</p>
+<p>今天我们通过 SDKMAN + direnv 组合拳，实现<strong>进入项目目录即自动切换 JDK</strong> 的丝滑体验。</p>
+<span id="more"></span>
+
+<h2 id="第一步：安装核心工具"><a href="#第一步：安装核心工具" class="headerlink" title="第一步：安装核心工具"></a>第一步：安装核心工具</h2><p>工欲善其事，必先利其器。</p>
+<h3 id="1-安装-SDKMAN-（JDK-管理器）"><a href="#1-安装-SDKMAN-（JDK-管理器）" class="headerlink" title="1. 安装 SDKMAN!（JDK 管理器）"></a>1. 安装 SDKMAN!（JDK 管理器）</h3><p>SDKMAN! 是类 Unix 系统上管理多版本 JDK 的最佳工具。</p>
+<p><strong>安装：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl -s “https://get.sdkman.io” | bash</span><br></pre></td></tr></table></figure>
+
+<p><strong>加载环境：</strong></p>
+<p>安装完成后，执行以下命令（或重启终端）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">source</span> “<span class="variable">$HOME</span>/.sdkman/bin/sdkman-init.sh”</span><br></pre></td></tr></table></figure>
+
+<p><strong>验证：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sdk version</span><br></pre></td></tr></table></figure>
+
+<p>看到版本号即安装成功。</p>
+<p><strong>配置 Zsh 自动加载：</strong></p>
+<p>在 <code>~/.zshrc</code> 末尾添加：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">export</span> SDKMAN_DIR=”<span class="variable">$HOME</span>/.sdkman”</span><br><span class="line">[[ -s “<span class="variable">$HOME</span>/.sdkman/bin/sdkman-init.sh” ]] &amp;&amp; <span class="built_in">source</span> “<span class="variable">$HOME</span>/.sdkman/bin/sdkman-init.sh”</span><br></pre></td></tr></table></figure>
+
+<p><strong>安装需要的 JDK 版本：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sdk install java 25.0.2-tem</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-安装-direnv（环境加载器）"><a href="#2-安装-direnv（环境加载器）" class="headerlink" title="2. 安装 direnv（环境加载器）"></a>2. 安装 direnv（环境加载器）</h3><p>direnv 是一个轻量级 Shell 扩展，能根据当前目录自动加载&#x2F;卸载环境变量。</p>
+<p><strong>安装（macOS）：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install direnv</span><br></pre></td></tr></table></figure>
+
+<p><strong>配置 Shell Hook（必做！否则不生效）：</strong></p>
+<p>Zsh 用户在 <code>~/.zshrc</code> 末尾添加：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">eval</span> “$(direnv hook zsh)”</span><br></pre></td></tr></table></figure>
+
+<h2 id="第二步：打通-SDKMAN-与-direnv"><a href="#第二步：打通-SDKMAN-与-direnv" class="headerlink" title="第二步：打通 SDKMAN 与 direnv"></a>第二步：打通 SDKMAN 与 direnv</h2><p>direnv 默认无法直接调用 <code>sdk</code> 命令——因为 <code>sdk</code> 是 Shell 函数而非二进制文件。我们需要建一座桥。</p>
+<p><strong>创建全局辅助函数：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">mkdir</span> -p ~/.config/direnv/lib</span><br><span class="line"><span class="built_in">cat</span> &lt;&lt; <span class="string">&#x27;EOF&#x27;</span> &gt; ~/.config/direnv/lib/sdkman.sh</span><br><span class="line"><span class="function"><span class="title">use_sdkman</span></span>() &#123;</span><br><span class="line">  <span class="built_in">local</span> sdk_init=”<span class="variable">$HOME</span>/.sdkman/bin/sdkman-init.sh”</span><br><span class="line">  <span class="keyword">if</span> [[ -s “<span class="variable">$sdk_init</span>” ]]; <span class="keyword">then</span></span><br><span class="line">    <span class="built_in">source</span> “<span class="variable">$sdk_init</span>”</span><br><span class="line">    sdk use java “<span class="variable">$1</span>”</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    <span class="built_in">echo</span> “Error: SDKMAN failed to initialize. Please check <span class="keyword">if</span> it is installed.”</span><br><span class="line">    <span class="built_in">return</span> 1</span><br><span class="line">  <span class="keyword">fi</span></span><br><span class="line">&#125;</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>这样所有项目都能复用这个函数。</p>
+<h2 id="第三步：项目级配置"><a href="#第三步：项目级配置" class="headerlink" title="第三步：项目级配置"></a>第三步：项目级配置</h2><p>有了全局配置，每个项目的设置只需几秒。</p>
+<h3 id="1-生成-sdkmanrc"><a href="#1-生成-sdkmanrc" class="headerlink" title="1. 生成 .sdkmanrc"></a>1. 生成 <code>.sdkmanrc</code></h3><p>在项目根目录执行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sdk <span class="built_in">env</span> init</span><br></pre></td></tr></table></figure>
+
+<p>这会生成 <code>.sdkmanrc</code> 文件，编辑为你需要的版本：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java=25.0.2-graal</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-创建-envrc"><a href="#2-创建-envrc" class="headerlink" title="2. 创建 .envrc"></a>2. 创建 <code>.envrc</code></h3><p>在项目根目录创建 <code>.envrc</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 自动解析 .sdkmanrc 中的 java 版本号并切换</span></span><br><span class="line">use_sdkman $(grep <span class="string">&#x27;java=&#x27;</span> .sdkmanrc | <span class="built_in">cut</span> -d<span class="string">&#x27;=&#x27;</span> -f2)</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-授权生效"><a href="#3-授权生效" class="headerlink" title="3. 授权生效"></a>3. 授权生效</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">direnv allow</span><br></pre></td></tr></table></figure>
+
+<p>如果提示版本未安装：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Stop! Candidate version is not installed.</span><br><span class="line"></span><br><span class="line">Tip: Run the following to install this version</span><br><span class="line"></span><br><span class="line">$ sdk install java 25.0.2-graal</span><br></pre></td></tr></table></figure>
+
+<p>先执行安装命令，再重新 <code>direnv allow</code>。成功后会看到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Using java version 25.0.2-graal in this shell.</span><br><span class="line">direnv: export ~JAVA_HOME ~PATH</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/2026/03/1b5a6dab-f2af-487d-aca5-c6b5b3f9d951-1.png" alt="SDKMAN + direnv 自动切换 JDK 成功"></p>
+<h3 id="4-验证"><a href="#4-验证" class="headerlink" title="4. 验证"></a>4. 验证</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -version</span><br></pre></td></tr></table></figure>
+
+<p>确认输出的是你设置的 JDK 版本，大功告成！</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>SDKMAN 负责管理安装，direnv 负责驱动环境——这套组合拳让 Java 版本管理变得极其丝滑。你只需专注于代码，版本切换这种琐事，交给工具就好。</p>
+<p>以后每进入一个项目目录，JDK 自动切换，再也不用手动 <code>sdk use</code> 了。</p>
+
+        </div>
+        
+            <section class="post-copyright">
+                <div class="post-copyright-avatar">
+                    <img src="/image/avatar.jpeg" alt="avatar">
+                </div>
+                <div class="post-copyright-info">
+                    <p class="copyright-item">
+                        <span>说明:</span>
+                        <span>本站点博文除特殊说明转载自xxx外，均为博主原创内容</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>转载请注明来源:</span>
+                        <span>Caratacus&#39;s Blog-《SDKMAN + direnv 自动切换 JDK 环境》</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>本文链接地址:</span>
+                        <span><a href="https://caratacus.github.io/2026/03/26/sdkman-direnv-auto-jdk-switch/">https://caratacus.github.io/2026/03/26/sdkman-direnv-auto-jdk-switch/</a></span>
+                    </p>
+                </div>
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Java/"># Java</a>
+                    
+                        <a href="/tags/SDKMAN/"># SDKMAN</a>
+                    
+                        <a href="/tags/direnv/"># direnv</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+
+        <!-- Comments -->
+        
+    <div id="comments">
+        <div id="disqus_thread"></div>
+        <script>
+            var disqus_shortname = 'caratacus';
+            var disqus_config = function () {
+                this.page.url = 'https://caratacus.github.io/2026/03/26/sdkman-direnv-auto-jdk-switch/';
+                this.page.identifier = '2026/03/26/sdkman-direnv-auto-jdk-switch/';
+            };
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+
+
+
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2026/03/25/materials-spring-bean-lifecycle-source-code-analysis/">Spring Bean 生命周期源码深度解析 🔐</a>
+            
+        </section>
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© <a href="https://github.com/Caratacus" target="_blank">Caratacus</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
