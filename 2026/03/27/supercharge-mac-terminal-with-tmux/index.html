@@ -259,6 +259,28 @@
 </ul>
 <p>不用开一堆终端窗口，桌面清爽很多。</p>
 <h4 id="复制粘贴和滚动"><a href="#复制粘贴和滚动" class="headerlink" title="复制粘贴和滚动"></a>复制粘贴和滚动</h4><p>自带终端的复制粘贴、滚动历史在某些场景下很别扭。tmux 配一下就能用鼠标滚动、跨窗格复制，顺手很多。</p>
+<h3 id="配置鼠标滚动（Ghostty-现代终端必看）"><a href="#配置鼠标滚动（Ghostty-现代终端必看）" class="headerlink" title="配置鼠标滚动（Ghostty&#x2F;现代终端必看）"></a>配置鼠标滚动（Ghostty&#x2F;现代终端必看）</h3><p>如果你用 Ghostty 或其他现代终端，在 tmux 里滑动触摸板时可能会发现：滚动的不是屏幕内容，而是之前输入的命令历史。</p>
+<p><strong>原因</strong>：tmux 默认没开鼠标支持。此时终端进入”备用屏幕模式”，滚动事件被转换成方向键输入，所以触发了历史命令切换而不是屏幕滚动。</p>
+<p><strong>解决方法</strong>：开启 tmux 的鼠标支持。</p>
+<p><strong>第 1 步</strong>：编辑配置文件</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nano ~/.tmux.conf</span><br></pre></td></tr></table></figure>
+
+<p>文件不存在也没关系，直接创建就行。</p>
+<p><strong>第 2 步</strong>：添加配置</p>
+<p>在文件里加一行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set -g mouse on</span><br></pre></td></tr></table></figure>
+
+<p><strong>第 3 步</strong>：重新加载配置</p>
+<p>在 tmux 会话里运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tmux source-file ~/.tmux.conf</span><br></pre></td></tr></table></figure>
+
+<p>或者直接关掉 tmux 重开也行。</p>
+<p><strong>配置后的效果</strong>：</p>
+<ul>
+<li>滑动触摸板时，tmux 自动进入复制模式，右上角会显示位置指示器</li>
+<li>可以正常上下滚动查看历史输出</li>
+<li>滚回最底部或按 <code>q</code> 键退出复制模式，回到正常输入状态</li>
+</ul>
 <h3 id="Mac-安装-tmux"><a href="#Mac-安装-tmux" class="headerlink" title="Mac 安装 tmux"></a>Mac 安装 tmux</h3><p>Homebrew 一行命令：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install tmux</span><br></pre></td></tr></table></figure>
 
