@@ -218,6 +218,8 @@
                             
                                 <a href="/categories/Configuration/">Configuration</a>
                             
+                                <a href="/categories/Configuration/Terminal/">Terminal</a>
+                            
                         </span>
                     
                 </div>
@@ -258,7 +260,11 @@
 <h3 id="1-准备工作：安装-Tmux"><a href="#1-准备工作：安装-Tmux" class="headerlink" title="1. 准备工作：安装 Tmux"></a>1. 准备工作：安装 Tmux</h3><p>由于 macOS 没有预装 tmux，我们需要先手动安装它：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">brew install tmux</span><br></pre></td></tr></table></figure>
 
-<p>安装完成后，在终端输入 <code>tmux</code> 即可进入环境。请记住，我们接下来的所有”多窗口”操作，<strong>都是在 tmux 自己的分屏（Panes）里进行的，而不是 Ghostty 原生的新窗口或新标签页。</strong></p>
+<p>安装完成后，在终端输入 <code>tmux</code> 即可进入环境。</p>
+<blockquote>
+<p><strong>想深入了解 tmux？</strong> 如果你还不熟悉 tmux 的会话管理、窗格操作等核心概念，推荐先阅读 <a href="/2026/03/27/supercharge-mac-terminal-with-tmux/">Mac 终端不够用？tmux 让你的终端战斗力翻倍</a>，了解为什么 tmux 是终端效率利器。</p>
+</blockquote>
+<p>请记住，我们接下来的所有”多窗口”操作，<strong>都是在 tmux 自己的分屏（Panes）里进行的，而不是 Ghostty 原生的新窗口或新标签页。</strong></p>
 <h3 id="2-核心魔法：让-Ghostty-充当”按键翻译官”"><a href="#2-核心魔法：让-Ghostty-充当”按键翻译官”" class="headerlink" title="2. 核心魔法：让 Ghostty 充当”按键翻译官”"></a>2. 核心魔法：让 Ghostty 充当”按键翻译官”</h3><p>在纯粹的终端（如 tmux）世界里，它是不认识 macOS 专属的 <code>Command</code> (⌘) 键的。tmux 默认的分屏快捷键是繁琐的两步走：先按前缀键 <code>Ctrl + b</code> 松手，再按 <code>%</code>。这显然不够优雅。</p>
 <p><strong>破局思路：</strong> 我们利用 Ghostty 强大的快捷键绑定功能，拦截 <code>Command</code> 组合键，然后在后台向终端发送 tmux 认识的底层机器码！</p>
 <p>在 tmux 中，默认的 <code>Ctrl+b</code> 对应的底层 Hex 码是 <code>\x02</code>。理解了这一点，我们就可以开始改造了。</p>
@@ -472,7 +478,7 @@
         <section class="post-nav">
             
             
-            <a class="next" rel="next" href="/2026/03/26/sdkman-direnv-auto-jdk-switch/">SDKMAN + direnv 自动切换 JDK 环境</a>
+            <a class="next" rel="next" href="/2026/03/27/supercharge-mac-terminal-with-tmux/">Mac 终端不够用？tmux 让你的终端战斗力翻倍</a>
             
         </section>
     </article>
