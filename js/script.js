@@ -97,3 +97,33 @@ document.ready(
         })
     }
 );
+
+// Copy code button for code blocks
+document.ready(function() {
+    document.querySelectorAll('figure.highlight').forEach(function(block) {
+        // Create copy button
+        const copyBtn = document.createElement('div');
+        copyBtn.className = 'copy-btn';
+        copyBtn.textContent = 'Copy';
+        block.appendChild(copyBtn);
+
+        // Make block relative for absolute positioning
+        block.style.position = 'relative';
+
+        copyBtn.addEventListener('click', function() {
+            const code = block.querySelector('td.code pre') || block.querySelector('pre');
+            const text = code ? code.innerText : '';
+
+            navigator.clipboard.writeText(text).then(function() {
+                copyBtn.textContent = 'Copied!';
+                copyBtn.classList.add('copied');
+                setTimeout(function() {
+                    copyBtn.textContent = 'Copy';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Failed to copy:', err);
+            });
+        });
+    });
+});
