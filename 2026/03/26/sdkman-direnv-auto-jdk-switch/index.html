@@ -284,6 +284,19 @@
 <h3 id="4-验证"><a href="#4-验证" class="headerlink" title="4. 验证"></a>4. 验证</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -version</span><br></pre></td></tr></table></figure>
 
 <p>确认输出的是你设置的 JDK 版本，大功告成！</p>
+<h2 id="SDKMAN-中的-JDK-版本设置简称"><a href="#SDKMAN-中的-JDK-版本设置简称" class="headerlink" title="SDKMAN 中的 JDK 版本设置简称"></a>SDKMAN 中的 JDK 版本设置简称</h2><p>如果你同时安装了多个小版本，例如 <code>17.0.1-tem</code>、<code>17.0.2-tem</code>，那么每次执行 <code>sdk use java ...</code> 都要输入完整版本号，操作上会比较啰嗦。</p>
+<p>SDKMAN 本身没有提供“别名”命令，但可以借助软链接实现一个足够实用的替代方案。</p>
+<h3 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h3><p>在 <code>~/.sdkman/candidates/java/</code> 目录下，为某个真实版本创建一个自定义名称的软链接。这样 <code>sdk</code> 在切换版本时，就可以直接使用这个简称。</p>
+<h3 id="操作步骤"><a href="#操作步骤" class="headerlink" title="操作步骤"></a>操作步骤</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. 进入 SDKMAN 的 Java 安装目录</span></span><br><span class="line"><span class="built_in">cd</span> ~/.sdkman/candidates/java/</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 创建软链接（&quot;17&quot; -&gt; &quot;17.0.1-tem&quot;）</span></span><br><span class="line"><span class="built_in">ln</span> -s 17.0.1-tem 17</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 使用简称切换版本</span></span><br><span class="line">sdk use java 17       <span class="comment"># 当前终端临时切换</span></span><br><span class="line">sdk default java 17   <span class="comment"># 设为全局默认版本</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="更新简称指向"><a href="#更新简称指向" class="headerlink" title="更新简称指向"></a>更新简称指向</h3><p>当你想把 <code>17</code> 改为指向另一个具体版本时，可以先删除旧链接，再重新创建：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">rm</span> 17</span><br><span class="line"><span class="built_in">ln</span> -s 17.0.2-tem 17</span><br></pre></td></tr></table></figure>
+
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><ul>
+<li>SDKMAN 没有原生的版本别名功能，软链接是一个简单直接的替代方案</li>
+<li>自定义简称不能和已有的版本目录重名，否则会发生冲突</li>
+<li><code>sdk use</code> 只对当前终端会话生效，<code>sdk default</code> 会修改全局默认版本</li>
+</ul>
 <h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>SDKMAN 负责管理安装，direnv 负责驱动环境——这套组合拳让 Java 版本管理变得极其丝滑。你只需专注于代码，版本切换这种琐事，交给工具就好。</p>
 <p>以后每进入一个项目目录，JDK 自动切换，再也不用手动 <code>sdk use</code> 了。</p>
 
