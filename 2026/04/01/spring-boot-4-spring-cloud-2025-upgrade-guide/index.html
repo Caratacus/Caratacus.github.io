@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Caratacus">
+
+
+
+
+
+<title>Spring Boot 4 与 Spring Cloud 2025.1 升级排障 | Caratacus&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<!-- Mermaid Config -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const pagebody = document.getElementsByTagName('body')[0]
+
+            function setTheme(status) {
+
+                if (status === 'dark') {
+                    window.sessionStorage.theme = 'dark'
+                    pagebody.classList.add('dark-theme');
+
+                } else {
+                    window.sessionStorage.theme = 'light'
+                    pagebody.classList.remove('dark-theme');
+                }
+            };
+
+            setTheme(window.sessionStorage.theme || 'light')
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Caratacus&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Caratacus&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">
+                    <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4.5 17.27q-.213 0-.356-.145T4 16.768t.144-.356t.356-.143h15q.213 0 .356.144q.144.144.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.144T4 11.999t.144-.356t.356-.143h15q.213 0 .356.144t.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.143Q4 7.443 4 7.23t.144-.356t.356-.143h15q.213 0 .356.144T20 7.23t-.144.356t-.356.144z"/></svg>
+                    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="m12 12.708l-5.246 5.246q-.14.14-.344.15t-.364-.15t-.16-.354t.16-.354L11.292 12L6.046 6.754q-.14-.14-.15-.344t.15-.364t.354-.16t.354.16L12 11.292l5.246-5.246q.14-.14.345-.15q.203-.01.363.15t.16.354t-.16.354L12.708 12l5.246 5.246q.14.14.15.345q.01.203-.15.363t-.354.16t-.354-.16z"/></svg>
+                </div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if (toggleMenu.classList.contains("active")) {
+            toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        } else {
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">Spring Boot 4 与 Spring Cloud 2025.1 升级排障</h1>
+            
+                <div class="post-meta">
+                    
+
+                    
+                    
+                        <span class="post-category">
+                    标签：
+                            
+                                <a href="/categories/Engineering/">Engineering</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <p>最近在自己研究 Spring 体系底层架构升级时，我集中踩到了两类问题：一类来自 <strong>Spring Boot 4.0</strong> 的模块化重构，另一类来自 <strong>Spring Cloud 2025.1</strong> 在网关与客户端侧的架构调整。</p>
+<p>本文涉及的主要依赖版本如下：</p>
+<ul>
+<li>Java：21</li>
+<li>Spring Boot：4.0.5</li>
+<li>Spring Cloud：2025.1.1</li>
+<li>Spring Cloud Alibaba：2025.1.0.0</li>
+<li>Gradle：9.4.1</li>
+</ul>
+<p>这次升级最明显的感受是，Spring 团队不再满足于“保持兼容的渐进演化”，而是开始更彻底地做模块边界收敛、语义归类和职责拆分。过去诸多“能用但不够干净”的 API、包路径和 Starter 结构，均被重新整理。</p>
+<p>若应用中同时使用了 Spring MVC、Actuator、Kafka、Cache、Gateway、Feign 或自定义消息转换器，那么此次升级极易引发一连串编译错误、依赖缺失和行为变化。本文客观记录了我在升级过程中遇到的核心破坏性更新、根因定位及最终的修复方案。</p>
+<span id="more"></span>
+
+<h2 id="版本基线与上下文"><a href="#版本基线与上下文" class="headerlink" title="版本基线与上下文"></a>版本基线与上下文</h2><p>此次并非单纯升级 Spring Boot，而是将整条 Spring 技术栈的依赖基线一并抬升。我的升级前后核心版本对照如下：</p>
+<table>
+<thead>
+<tr>
+<th align="left">组件</th>
+<th align="left">升级前</th>
+<th align="left">升级后</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Java</td>
+<td align="left">17</td>
+<td align="left">21</td>
+</tr>
+<tr>
+<td align="left">Spring Boot</td>
+<td align="left">3.4.6</td>
+<td align="left">4.0.5</td>
+</tr>
+<tr>
+<td align="left">Spring Cloud</td>
+<td align="left">2024.0.1</td>
+<td align="left">2025.1.1</td>
+</tr>
+<tr>
+<td align="left">Spring Cloud Alibaba</td>
+<td align="left">2023.0.3.2</td>
+<td align="left">2025.1.0.0</td>
+</tr>
+<tr>
+<td align="left">Gradle</td>
+<td align="left">8.14.2</td>
+<td align="left">9.4.1</td>
+</tr>
+</tbody></table>
+<p>大量问题并非单一框架升级导致，而是基线抬高后的连锁反应。例如：</p>
+<ul>
+<li><code>ErrorController</code>、<code>WebMvcRegistrations</code> 的报错偏向 Spring Boot 4 的模块化迁移。</li>
+<li>Gateway Starter 重命名、Feign 解码链调整，偏向 Spring Cloud 2025.1 的架构拆分。</li>
+<li>测试运行时与插件兼容性，往往与 Java 21、Gradle 9 强相关。</li>
+<li>生态兼容问题受 Spring Cloud Alibaba 版本跨度影响。</li>
+</ul>
+<h2 id="Spring-Boot-4-模块化拆分分析"><a href="#Spring-Boot-4-模块化拆分分析" class="headerlink" title="Spring Boot 4 模块化拆分分析"></a>Spring Boot 4 模块化拆分分析</h2><p>Spring Boot 4 在架构上执行了更为激进的模块化拆分与领域对齐。以往混杂的自动配置类、指标接口和 Web 契约被重新划入明确的模块。升级后的诸多报错，本质上是框架对原有模糊依赖关系的强制纠偏。</p>
+<h3 id="核心类包路径变更"><a href="#核心类包路径变更" class="headerlink" title="核心类包路径变更"></a>核心类包路径变更</h3><p>升级后的首个阻塞点是编译期类缺失。这类问题通常源于<strong>包路径迁移（Package Relocation）</strong>。全局替换旧的 <code>import</code> 语句即可，接口逻辑本身通常无需调整。</p>
+<table>
+<thead>
+<tr>
+<th align="left">组件分类</th>
+<th align="left">旧路径（Spring Boot 3.x）</th>
+<th align="left">新路径（Spring Boot 4.x）</th>
+<th align="left">变更原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">异常处理</td>
+<td align="left"><code>org.springframework.boot.web.servlet.error.ErrorController</code></td>
+<td align="left"><code>org.springframework.boot.webmvc.error.ErrorController</code></td>
+<td align="left">区分 Web MVC 与 WebFlux，按运行时模型重新归类。</td>
+</tr>
+<tr>
+<td align="left">缓存指标</td>
+<td align="left"><code>org.springframework.boot.actuate.metrics.cache.CacheMeterBinderProvider</code></td>
+<td align="left"><code>org.springframework.boot.cache.metrics.CacheMeterBinderProvider</code></td>
+<td align="left">将缓存指标采集能力从 Actuator 解耦，下沉至 Cache 模块。</td>
+</tr>
+</tbody></table>
+<p>排查优先级：</p>
+<ol>
+<li>确认目标类是否发生了包名迁移。</li>
+<li>确认目标类是否被拆分至独立模块。</li>
+<li>确认当前引用的 Starter 是否包含该模块。</li>
+</ol>
+<h3 id="自动配置拆分与显式依赖引入"><a href="#自动配置拆分与显式依赖引入" class="headerlink" title="自动配置拆分与显式依赖引入"></a>自动配置拆分与显式依赖引入</h3><p>在 Spring Boot 3 时代，诸多组件依赖通过 <code>spring-boot-autoconfigure</code> 隐式传递。Boot 4 将其进一步拆解，相关的自动配置被分散到核心模块中。</p>
+<h4 id="异常现象"><a href="#异常现象" class="headerlink" title="异常现象"></a>异常现象</h4><ul>
+<li>抛出 <code>ClassNotFoundException</code>。</li>
+<li>无法解析 <code>KafkaAutoConfiguration</code> 等类。</li>
+<li>原有的组件功能失效。</li>
+</ul>
+<h4 id="根因与修复方案"><a href="#根因与修复方案" class="headerlink" title="根因与修复方案"></a>根因与修复方案</h4><p>必须显式引入对应领域的 Starter 以获取原有能力。</p>
+<p><strong>Kafka 依赖引入：</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-kafka<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>Cache 依赖引入：</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-cache<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>遵循架构规范，我选择优先使用官方 Starter 组合依赖，摒弃手工拼凑底层模块。在短期过渡中，引入 <code>spring-boot-autoconfigure-classic</code> 可作临时止血，但长期来看违背了 Boot 4 的设计初衷。</p>
+<h3 id="WebMvcConfigurer-API-演进：转向-Builder-模式"><a href="#WebMvcConfigurer-API-演进：转向-Builder-模式" class="headerlink" title="WebMvcConfigurer API 演进：转向 Builder 模式"></a>WebMvcConfigurer API 演进：转向 Builder 模式</h3><p>在 Spring Framework 7.0 底层，直接操作 <code>HttpMessageConverter</code> 列表的模式被废弃，转为更严谨的 Builder 模式。</p>
+<h4 id="废弃的实现"><a href="#废弃的实现" class="headerlink" title="废弃的实现"></a>废弃的实现</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">extendMessageConverters</span><span class="params">(List&lt;HttpMessageConverter&lt;?&gt;&gt; converters)</span> &#123;</span><br><span class="line">    <span class="comment">// 隐式且不可控的修改 converters</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="新版构建契约"><a href="#新版构建契约" class="headerlink" title="新版构建契约"></a>新版构建契约</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">configureMessageConverters</span><span class="params">(HttpMessageConverters.ServerBuilder builder)</span> &#123;</span><br><span class="line">    <span class="comment">// 明确的插入顺序控制</span></span><br><span class="line">    builder.addFirst(...);</span><br><span class="line">    builder.add(...);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>此变更强制开发者以“声明式扩展”替代“集合篡改”，保证了转化器顺序的确定性。</p>
+<h3 id="避免全局-Jackson-序列化污染"><a href="#避免全局-Jackson-序列化污染" class="headerlink" title="避免全局 Jackson 序列化污染"></a>避免全局 Jackson 序列化污染</h3><p>在历史代码中，为避免客户端传递异常 <code>Accept</code> 头（如 <code>text/html</code>）导致 <code>406 Not Acceptable</code>，曾通过修改 <code>MappingJackson2HttpMessageConverter</code> 扩大其 <code>supportedMediaTypes</code>。这污染了 Jackson 的职责边界，为二进制流处理埋下了隐患。</p>
+<p>我的重构策略是回归内容协商层进行根治：<strong>忽略客户端的不规范 <code>Accept</code>，默认统一返回 JSON。</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Configuration;</span><br><span class="line"><span class="keyword">import</span> org.springframework.http.MediaType;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.servlet.config.annotation.ContentNegotiationConfigurer;</span><br><span class="line"><span class="keyword">import</span> org.springframework.web.servlet.config.annotation.WebMvcConfigurer;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">WebMvcConfig</span> <span class="keyword">implements</span> <span class="title class_">WebMvcConfigurer</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">configureContentNegotiation</span><span class="params">(ContentNegotiationConfigurer configurer)</span> &#123;</span><br><span class="line">        configurer</span><br><span class="line">            .ignoreAcceptHeader(<span class="literal">true</span>)</span><br><span class="line">            .defaultContentType(MediaType.APPLICATION_JSON);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过上述配置，内容协商决定输出类型，而 Jackson 仅专注 JSON 序列化。对于包含页面渲染或下载的混合型应用，我在特定的 <code>@ExceptionHandler</code> 中显式设置 <code>MediaType.APPLICATION_JSON</code>，从而收敛兜底范围。</p>
+<h2 id="Spring-Cloud-2025-1-网关与客户端架构调整"><a href="#Spring-Cloud-2025-1-网关与客户端架构调整" class="headerlink" title="Spring Cloud 2025.1 网关与客户端架构调整"></a>Spring Cloud 2025.1 网关与客户端架构调整</h2><p>Spring Cloud 2025.1 的核心在于“运行时模型分流”，彻底区分了 WebFlux 网关、MVC 网关以及服务端与客户端的消息转换器。</p>
+<h3 id="网关依赖重构：区分运行时模型"><a href="#网关依赖重构：区分运行时模型" class="headerlink" title="网关依赖重构：区分运行时模型"></a>网关依赖重构：区分运行时模型</h3><p>旧的 <code>spring-cloud-starter-gateway</code> 已被废弃，强行使用会导致 <code>GlobalFilter</code> 丢失与启动失败。必须依据运行时模型重新引入。</p>
+<p><strong>响应式 WebFlux 网关依赖：</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-gateway-server-webflux<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>同步阻塞式 MVC 网关依赖：</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.cloud<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-cloud-starter-gateway-server-webmvc<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>在 MVC 模型下，需回归标准的 Servlet <code>Filter</code>，废弃响应式下的 <code>GlobalFilter</code>。</p>
+<h3 id="路由与过滤器配置前缀迁移"><a href="#路由与过滤器配置前缀迁移" class="headerlink" title="路由与过滤器配置前缀迁移"></a>路由与过滤器配置前缀迁移</h3><p>即便依赖修复，若配置未更新，网关路由依然失效，根因是配置前缀的同步变更。</p>
+<h4 id="历史配置前缀"><a href="#历史配置前缀" class="headerlink" title="历史配置前缀"></a>历史配置前缀</h4><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="string">...</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="新版配置前缀"><a href="#新版配置前缀" class="headerlink" title="新版配置前缀"></a>新版配置前缀</h4><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">gateway:</span></span><br><span class="line">      <span class="attr">server:</span></span><br><span class="line">        <span class="attr">webflux:</span></span><br><span class="line">          <span class="string">...</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="HttpMessageConverters-与客户端转换器定制"><a href="#HttpMessageConverters-与客户端转换器定制" class="headerlink" title="HttpMessageConverters 与客户端转换器定制"></a>HttpMessageConverters 与客户端转换器定制</h3><p>为 Feign 注入转换器时，路径已变更为 <code>org.springframework.boot.http.converter.autoconfigure.HttpMessageConverters</code>。官方倾向于将客户端与服务端转换器物理隔离。</p>
+<p>在网关中配置 Feign 的 JSON 解析能力时，我采用了 <code>ClientHttpMessageConvertersCustomizer</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.springframework.boot.http.converter.autoconfigure.ClientHttpMessageConvertersCustomizer;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Bean;</span><br><span class="line"><span class="keyword">import</span> org.springframework.context.annotation.Configuration;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">FeignConverterConfig</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> ClientHttpMessageConvertersCustomizer <span class="title function_">customClientConverters</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> builder -&gt; &#123;</span><br><span class="line">            builder.withJsonConverter(HttpMessageConverterUtils.getMappingJackson2HttpMessageConverter());</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>面对下游服务返回错误 <code>Content-Type</code>（如 <code>text/html</code> 但实为 JSON）的情况，我没有扩大解码器的媒体类型支持，而是直接在 Feign 解码层进行拦截治理：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> feign.Response;</span><br><span class="line"><span class="keyword">import</span> feign.codec.Decoder;</span><br><span class="line"><span class="keyword">import</span> java.lang.reflect.Type;</span><br><span class="line"><span class="keyword">import</span> java.util.HashMap;</span><br><span class="line"><span class="keyword">import</span> java.util.Map;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JsonForceDecoder</span> <span class="keyword">implements</span> <span class="title class_">Decoder</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> Decoder delegate;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">JsonForceDecoder</span><span class="params">(Decoder delegate)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.delegate = delegate;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Object <span class="title function_">decode</span><span class="params">(Response response, Type type)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        Map&lt;String, java.util.Collection&lt;String&gt;&gt; headers = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;(response.headers());</span><br><span class="line">        headers.put(<span class="string">&quot;Content-Type&quot;</span>, java.util.Collections.singletonList(<span class="string">&quot;application/json&quot;</span>));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 强制重写响应头为 application/json，交由标准解码器处理</span></span><br><span class="line">        <span class="type">Response</span> <span class="variable">modifiedResponse</span> <span class="operator">=</span> response.toBuilder().headers(headers).build();</span><br><span class="line">        <span class="keyword">return</span> delegate.decode(modifiedResponse, type);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>此方案精准隔离了外部系统的不规范行为，同时保障了当前系统 Jackson 配置的纯净度。</p>
+<h2 id="Release-Notes-关键特性评估"><a href="#Release-Notes-关键特性评估" class="headerlink" title="Release Notes 关键特性评估"></a>Release Notes 关键特性评估</h2><p>查阅官方 Release Notes，我梳理了对系统架构演进影响深远的几项变动：</p>
+<ol>
+<li><strong>迁移缓冲策略：</strong> 官方建议跨度较大的项目先升级至 Spring Boot 3.5，以消化旧 API 废弃带来的冲击。</li>
+<li><strong>构建链路对齐：</strong> 新版支持 Gradle 9，不仅是业务代码的更新，构建系统（包括本地插件、Sonar 扫描等）亦需同步提基线。</li>
+<li><strong>HTTP Service Clients 增强：</strong> 提供了自动配置支持，具备取代 <code>RestTemplate</code> 的潜力，成为更轻量的声明式 RPC 方案。</li>
+<li><strong>API Versioning 标准化：</strong> <code>spring.mvc.apiversion.*</code> 提供了官方维度的路由版本控制抽象，利于后续淘汰自研拦截器。</li>
+<li><strong>OpenTelemetry 原生接入：</strong> 引入 <code>spring-boot-starter-opentelemetry</code>，简化了链路追踪与指标导出的拼装工作。</li>
+<li><strong>基础设施监控解耦：</strong> SSL 健康检查逻辑调整，MongoDB 健康检查移出强依赖。此类变化需同步刷新运维层的监控告警阈值。</li>
+</ol>
+<h2 id="工程实践中的边角问题排查"><a href="#工程实践中的边角问题排查" class="headerlink" title="工程实践中的边角问题排查"></a>工程实践中的边角问题排查</h2><p>结合实际的代码重构实战，我排查并解决了以下隐蔽问题：</p>
+<h3 id="JDK-版本与构建链协同"><a href="#JDK-版本与构建链协同" class="headerlink" title="JDK 版本与构建链协同"></a>JDK 版本与构建链协同</h3><p>系统升级至 Java 21 时，需全局对齐本地 <code>JAVA_HOME</code>、Docker 基础镜像及 CI 环境的 JRE。同时，测试框架补齐了 <code>junit-platform-launcher</code>，SonarQube 扩展自 <code>SonarQubeExtension</code> 迁移至 <code>SonarExtension</code>，确保构建交付链不受阻断。</p>
+<h3 id="MVC-自动配置扩展点迁移"><a href="#MVC-自动配置扩展点迁移" class="headerlink" title="MVC 自动配置扩展点迁移"></a>MVC 自动配置扩展点迁移</h3><p>大量的自动配置扩展点被迁移至新目录：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 旧路径</span></span><br><span class="line">org.springframework.boot.autoconfigure.web.servlet.WebMvcRegistrations</span><br><span class="line"></span><br><span class="line"><span class="comment">// 新路径</span></span><br><span class="line">org.springframework.boot.webmvc.autoconfigure.WebMvcRegistrations</span><br></pre></td></tr></table></figure>
+<p>这警示我们在排查编译错误时，需重点检索 <code>CacheAutoConfiguration</code>、<code>KafkaProperties</code> 等同样发生迁移的配置类。</p>
+<h3 id="OpenFeign-深度扩展适配"><a href="#OpenFeign-深度扩展适配" class="headerlink" title="OpenFeign 深度扩展适配"></a>OpenFeign 深度扩展适配</h3><p>对于定制了 Feign Decoder 的场景，已无法基于 <code>ObjectFactory&lt;HttpMessageConverters&gt;</code> 注入。我将其彻底重构，切换至新的 <code>FeignHttpMessageConverters</code> 依赖路径，以适配 2025.1 的契约。</p>
+<h3 id="Actuator-与-Cache-机制变动"><a href="#Actuator-与-Cache-机制变动" class="headerlink" title="Actuator 与 Cache 机制变动"></a>Actuator 与 Cache 机制变动</h3><p><code>CacheAutoConfiguration</code> 移至 <code>org.springframework.boot.cache.autoconfigure</code>，<code>NonUniqueCacheException</code> 亦随之调整。涉及自定义缓存指标、二级缓存封装的代码均产生破坏性报错，需对应修改包依赖。</p>
+<h2 id="复盘与架构演进反思"><a href="#复盘与架构演进反思" class="headerlink" title="复盘与架构演进反思"></a>复盘与架构演进反思</h2><p>本次底座升级深刻体现了 Spring 框架拒绝“模糊职责”与“隐式耦合”的设计决心。从 Web MVC 与 WebFlux 的严格分界，到客户端服务端配置的物理隔离，框架正通过 API 编译期报错倒逼项目结构收敛。</p>
+<p>总结我的排障执行链路：</p>
+<ol>
+<li>修复底层依赖与 Starter，严格对齐新版运行时模型。</li>
+<li>批量替换包路径，解决由于模块拆解带来的编译阻断。</li>
+<li>调整 <code>application.yml</code> 前缀，恢复配置读取链路。</li>
+<li>依据 Builder 模式重塑 <code>WebMvcConfigurer</code> 及各类消息转换器扩展点。</li>
+<li>清理历史反模式，移除针对 Jackson 的全局范围污染与运行时 Hack 逻辑。</li>
+</ol>
+<p>此次升级不仅是版本号的跳跃，更是消除历史技术债、明确模块边界的最佳工程实践节点。后续演进中，我计划逐步引入官方 API Versioning 及 OpenTelemetry 规范，持续提升系统的可观测性与架构整洁度。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Release-Notes">Spring Boot 4 Migration Guide</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/spring-cloud/spring-cloud-release/wiki/Spring-Cloud-2025.0-Release-Notes">Spring Cloud 2025.0 Release Notes</a></li>
+</ul>
+
+        </div>
+        
+            <section class="post-copyright">
+                <div class="post-copyright-avatar">
+                    <img src="/image/avatar.jpeg" alt="avatar">
+                </div>
+                <div class="post-copyright-info">
+                    <p class="copyright-item">
+                        <span>说明:</span>
+                        <span>本站点博文除特殊说明转载自xxx外，均为博主原创内容</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>转载请注明来源:</span>
+                        <span>Caratacus&#39;s Blog-《Spring Boot 4 与 Spring Cloud 2025.1 升级排障》</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>本文链接地址:</span>
+                        <span><a href="https://caratacus.github.io/2026/04/01/spring-boot-4-spring-cloud-2025-upgrade-guide/">https://caratacus.github.io/2026/04/01/spring-boot-4-spring-cloud-2025-upgrade-guide/</a></span>
+                    </p>
+                </div>
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Java/"># Java</a>
+                    
+                        <a href="/tags/Spring-Boot/"># Spring Boot</a>
+                    
+                        <a href="/tags/Spring-Cloud/"># Spring Cloud</a>
+                    
+                        <a href="/tags/Upgrade/"># Upgrade</a>
+                    
+                        <a href="/tags/Gateway/"># Gateway</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+
+        <!-- Comments -->
+        
+    <div id="comments">
+        <div id="disqus_thread"></div>
+        <script>
+            var disqus_shortname = 'caratacus';
+            var disqus_config = function () {
+                this.page.url = 'https://caratacus.github.io/2026/04/01/spring-boot-4-spring-cloud-2025-upgrade-guide/';
+                this.page.identifier = '2026/04/01/spring-boot-4-spring-cloud-2025-upgrade-guide/';
+            };
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+
+
+
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2026/03/28/ghostty-migration-guide/">从 iTerm2 到 Ghostty：下一代极速终端的完整迁移指南</a>
+            
+        </section>
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© <a href="https://github.com/Caratacus" target="_blank">Caratacus</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
