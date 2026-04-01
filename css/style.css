@@ -556,6 +556,27 @@ header .menu label {
   font-size: 2em;
   font-weight: normal;
 }
+.nickname-wrapper {
+  position: relative;
+  cursor: default;
+}
+.nickname-alt {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.75em;
+  color: #a9a9b3;
+  top: 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.dark-theme .nickname-alt {
+  color: #87878d;
+}
+.nickname-wrapper:hover .nickname-alt {
+  opacity: 1;
+}
 .links a {
   padding: 0 5px;
 }
