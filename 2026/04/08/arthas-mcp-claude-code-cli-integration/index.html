@@ -13,7 +13,7 @@
 
 
 
-<title>把 Arthas 交给 AI：集成 Claude Code CLI 与 Arthas MCP 的实战复盘 | Caratacus&#39;s Blog</title>
+<title>把 Arthas 交给 AI：集成 Claude Code CLI 与 Arthas MCP | Caratacus&#39;s Blog</title>
 
 
 
@@ -208,7 +208,7 @@
     
     <article class="post-wrap">
         <header class="post-header">
-            <h1 class="post-title">把 Arthas 交给 AI：集成 Claude Code CLI 与 Arthas MCP 的实战复盘</h1>
+            <h1 class="post-title">把 Arthas 交给 AI：集成 Claude Code CLI 与 Arthas MCP</h1>
             
                 <div class="post-meta">
                     
@@ -227,34 +227,29 @@
         </header>
 
         <div class="post-content">
-            <p>在复杂的 Java 生产环境下，传统的 Arthas 交互模式（SSH 登录 -&gt; 挂载 -&gt; 手敲 <code>trace</code>&#x2F;<code>watch</code>）虽强大，但在高频问题排查中仍存在效率瓶颈。随着 <strong>Model Context Protocol (MCP)</strong> 的成熟，Arthas 4.x 引入了对 MCP 的支持，使得 AI 助手（如 Claude Code CLI）能够直接调度其底层的诊断技能（Skills）。</p>
+            <p>我想做一件事：让 Claude Code 直接跑 Arthas 的 <code>thread</code>、<code>jad</code> 这些命令，省掉每次 SSH 上去手敲的麻烦。Arthas 4.x 支持了 MCP，理论上可以让 AI 直接调 Arthas，但实际接的时候卡在两个地方。</p>
 <p>本文涉及的主要依赖版本如下：</p>
 <ul>
 <li>Arthas：4.1.8</li>
 <li>Claude Code CLI：v2.1.91</li>
 </ul>
-<h2 id="上下文与问题定义-Context-Problem-Definition"><a href="#上下文与问题定义-Context-Problem-Definition" class="headerlink" title="上下文与问题定义 (Context &amp; Problem Definition)"></a>上下文与问题定义 (Context &amp; Problem Definition)</h2><p>我的初衷是构建一个“AI 驱动的诊断控制台”，让 Claude Code 直接执行 arthas中 <code>thread</code>、<code>jad</code> 等操作。然而，在初步尝试挂载工具时，我遭遇了两个核心障碍：</p>
-<p>通过翻阅 Arthas 的 <code>Configure</code> 类及其 HTTP 处理逻辑，我发现 MCP 服务并非通过命令行参数（CLI Options）开启，而是作为 HTTP Server 的一个特殊路径。</p>
-<ul>
-<li><strong>源码发现</strong>：<code>McpHttpRequestHandler</code> 负责拦截符合 <code>mcpEndpoint</code> 配置的请求。</li>
-<li><strong>配置优先级</strong>：该路径必须在 <code>arthas.properties</code> 或系统变量中显式定义，否则默认不激活。</li>
-</ul>
-<h3 id="验证桥接方案的可行性"><a href="#验证桥接方案的可行性" class="headerlink" title="验证桥接方案的可行性"></a>验证桥接方案的可行性</h3><p>由于 Claude Code 需要 Stdio 接口，我提出“远端转本地”的假设：寻找一个通用的 MCP 桥接器（Bridge），将远端 SSE 流转换为 Stdio 流。经过对比，社区的 <code>mcp-remote</code> 工具符合这一架构要求。</p>
-<h2 id="解决方案与实施-Solution-Implementation"><a href="#解决方案与实施-Solution-Implementation" class="headerlink" title="解决方案与实施 (Solution &amp; Implementation)"></a>解决方案与实施 (Solution &amp; Implementation)</h2><p>最终确立的标准化集成方案如下，分为服务端开启与客户端桥接两个关键步骤。</p>
-<h3 id="开启-Arthas-MCP-服务端点"><a href="#开启-Arthas-MCP-服务端点" class="headerlink" title="开启 Arthas MCP 服务端点"></a>开启 Arthas MCP 服务端点</h3><p>在执行 <code>arthas-boot.jar</code> 的当前目录下创建 <code>arthas.properties</code> 配置文件，以激活 SSE 路径：</p>
-<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 激活 MCP 服务路径，默认为 /mcp</span></span><br><span class="line"><span class="attr">arthas.mcpEndpoint</span>=<span class="string">/mcp</span></span><br><span class="line"><span class="attr">arthas.httpPort</span>=<span class="string">8563</span></span><br></pre></td></tr></table></figure>
+<h2 id="MCP-服务怎么开——和我一开始想的不一样"><a href="#MCP-服务怎么开——和我一开始想的不一样" class="headerlink" title="MCP 服务怎么开——和我一开始想的不一样"></a>MCP 服务怎么开——和我一开始想的不一样</h2><p>我最初以为 Arthas 的 MCP 是通过启动参数开的，类似 <code>--mcp</code> 这种 flag，试了几种写法都没效果。后来翻了 Arthas 的 <code>Configure</code> 类和 HTTP 处理逻辑才搞明白：MCP 不是独立的服务，而是挂在 HTTP Server 上的一个特殊路径。</p>
+<p>具体来说，<code>McpHttpRequestHandler</code> 负责拦截匹配 <code>mcpEndpoint</code> 配置的请求，这个路径需要在 <code>arthas.properties</code> 或系统变量里显式定义，否则默认不开。</p>
+<h2 id="解决-Claude-Code-的-Stdio-对接问题"><a href="#解决-Claude-Code-的-Stdio-对接问题" class="headerlink" title="解决 Claude Code 的 Stdio 对接问题"></a>解决 Claude Code 的 Stdio 对接问题</h2><p>搞定服务端之后又碰到一个问题：Arthas MCP 暴露的是 HTTP SSE 流，但 Claude Code 只认 Stdio 接口。所以需要一个中间层把 SSE 转成 Stdio。找了一圈，社区的 <code>mcp-remote</code> 刚好能干这事。</p>
+<h2 id="最终配置步骤"><a href="#最终配置步骤" class="headerlink" title="最终配置步骤"></a>最终配置步骤</h2><h3 id="开启-Arthas-MCP-端点"><a href="#开启-Arthas-MCP-端点" class="headerlink" title="开启 Arthas MCP 端点"></a>开启 Arthas MCP 端点</h3><p>在 <code>arthas-boot.jar</code> 的运行目录下创建 <code>arthas.properties</code>：</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 开启 MCP 路径，不配的话默认不激活</span></span><br><span class="line"><span class="attr">arthas.mcpEndpoint</span>=<span class="string">/mcp</span></span><br><span class="line"><span class="attr">arthas.httpPort</span>=<span class="string">8563</span></span><br></pre></td></tr></table></figure>
 
-<p>随后正常挂载 Arthas。启动后，Arthas 会在默认的 <strong>8563</strong> 端口暴露服务端点（<code>http://localhost:8563/mcp</code>）。</p>
-<h3 id="在-Claude-Code-中挂载桥接工具"><a href="#在-Claude-Code-中挂载桥接工具" class="headerlink" title="在 Claude Code 中挂载桥接工具"></a>在 Claude Code 中挂载桥接工具</h3><p>利用 <code>mcp-remote</code> 作为中间层，将 HTTP SSE 流量封装。首先通过 npm 安装桥接工具：</p>
+<p>然后正常启动 Arthas 挂载目标进程，MCP 端点就在 <code>http://localhost:8563/mcp</code> 上了。</p>
+<h3 id="用-mcp-remote-桥接到-Claude-Code"><a href="#用-mcp-remote-桥接到-Claude-Code" class="headerlink" title="用 mcp-remote 桥接到 Claude Code"></a>用 mcp-remote 桥接到 Claude Code</h3><p>先装桥接工具：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -g mcp-remote</span><br></pre></td></tr></table></figure>
 
-<p>接着在 Claude Code 中通过如下指令添加 Arthas MCP库：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 将远端 HTTP 流挂载给本地 Stdio CLI</span></span><br><span class="line">claude mcp add arthas mcp-remote http://localhost:8563/mcp</span><br><span class="line"><span class="comment"># 删除mcp</span></span><br><span class="line">claude mcp remove arthas</span><br></pre></td></tr></table></figure>
+<p>然后在 Claude Code 里添加 Arthas MCP：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 把远端 HTTP SSE 转成本地 Stdio</span></span><br><span class="line">claude mcp add arthas mcp-remote http://localhost:8563/mcp</span><br><span class="line"><span class="comment"># 不用了可以删掉</span></span><br><span class="line">claude mcp remove arthas</span><br></pre></td></tr></table></figure>
 
-<h3 id="验证连接状态"><a href="#验证连接状态" class="headerlink" title="验证连接状态"></a>验证连接状态</h3><p>通过 <code>claude mcp list</code> 指令可以观察到 <code>arthas</code> 工具包的状态：</p>
+<h3 id="确认连接"><a href="#确认连接" class="headerlink" title="确认连接"></a>确认连接</h3><p>跑 <code>claude mcp list</code> 能看到状态：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">arthas: http://localhost:8563/mcp (HTTP) - ✓ Connected</span><br></pre></td></tr></table></figure>
 
-<h2 id="成果"><a href="#成果" class="headerlink" title="成果"></a>成果</h2><p><img src="/images/2026/04/7b5e7bef-2cf5-42ca-aebd-f1820623eda2-1.png" alt="img.png"></p>
+<h2 id="跑起来的效果"><a href="#跑起来的效果" class="headerlink" title="跑起来的效果"></a>跑起来的效果</h2><p><img src="/images/2026/04/7b5e7bef-2cf5-42ca-aebd-f1820623eda2-1.png" alt="Claude Code 通过 MCP 调用 Arthas 的运行截图"></p>
 
         </div>
         
@@ -269,7 +264,7 @@
                     </p>
                     <p class="copyright-item">
                         <span>转载请注明来源:</span>
-                        <span>Caratacus&#39;s Blog-《把 Arthas 交给 AI：集成 Claude Code CLI 与 Arthas MCP 的实战复盘》</span>
+                        <span>Caratacus&#39;s Blog-《把 Arthas 交给 AI：集成 Claude Code CLI 与 Arthas MCP》</span>
                     </p>
                     <p class="copyright-item">
                         <span>本文链接地址:</span>
