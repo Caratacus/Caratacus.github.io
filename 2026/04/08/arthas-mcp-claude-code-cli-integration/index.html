@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta name="author" content="Caratacus">
+
+
+
+
+
+<title>把 Arthas 交给 AI：集成 Claude Code CLI 与 Arthas MCP 的实战复盘 | Caratacus&#39;s Blog</title>
+
+
+
+    <link rel="icon" href="/favicon.ico">
+
+
+
+
+    <!-- stylesheets list from _config.yml -->
+    
+    <link rel="stylesheet" href="/css/style.css">
+    
+
+
+
+    <!-- scripts list from _config.yml -->
+    
+    <script src="/js/script.js"></script>
+    
+    <script src="/js/tocbot.min.js"></script>
+    
+
+
+
+    
+    
+        
+    
+
+
+<!-- Mermaid Config -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+<body>
+    <script>
+        // this function is used to check current theme before page loaded.
+        (() => {
+            const pagebody = document.getElementsByTagName('body')[0]
+
+            function setTheme(status) {
+
+                if (status === 'dark') {
+                    window.sessionStorage.theme = 'dark'
+                    pagebody.classList.add('dark-theme');
+
+                } else {
+                    window.sessionStorage.theme = 'light'
+                    pagebody.classList.remove('dark-theme');
+                }
+            };
+
+            setTheme(window.sessionStorage.theme || 'light')
+        })();
+    </script>
+
+    <div class="wrapper">
+        <header>
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-header header-logo"><a href="/">Caratacus&#39;s Blog</a></div>
+            <div class="menu navbar-right">
+                
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+                
+                
+                <input id="switch_default" type="checkbox" class="switch_default">
+                <label for="switch_default" class="toggleBtn"></label>
+            </div>
+        </div>
+    </nav>
+
+    
+    <nav class="navbar-mobile" id="nav-mobile">
+        <div class="container">
+            <div class="navbar-header">
+                <div>
+                    <a href="/">Caratacus&#39;s Blog</a><a id="mobile-toggle-theme">·&nbsp;Light</a>
+                </div>
+                <div class="menu-toggle" onclick="mobileBtn()">
+                    <svg class="menu-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M4.5 17.27q-.213 0-.356-.145T4 16.768t.144-.356t.356-.143h15q.213 0 .356.144q.144.144.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.144T4 11.999t.144-.356t.356-.143h15q.213 0 .356.144t.144.357t-.144.356t-.356.143zm0-4.77q-.213 0-.356-.143Q4 7.443 4 7.23t.144-.356t.356-.143h15q.213 0 .356.144T20 7.23t-.144.356t-.356.144z"/></svg>
+                    <svg class="close-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><!-- Icon from Material Symbols Light by Google - https://github.com/google/material-design-icons/blob/master/LICENSE --><path fill="currentColor" d="m12 12.708l-5.246 5.246q-.14.14-.344.15t-.364-.15t-.16-.354t.16-.354L11.292 12L6.046 6.754q-.14-.14-.15-.344t.15-.364t.354-.16t.354.16L12 11.292l5.246-5.246q.14-.14.345-.15q.203-.01.363.15t.16.354t-.16.354L12.708 12l5.246 5.246q.14.14.15.345q.01.203-.15.363t-.354.16t-.354-.16z"/></svg>
+                </div>
+            </div>
+            <div class="menu" id="mobile-menu">
+                
+                <a class="menu-item" href="/archives">Posts</a>
+                
+                <a class="menu-item" href="/category">Categories</a>
+                
+                <a class="menu-item" href="/tag">Tags</a>
+                
+                <a class="menu-item" href="/about">About</a>
+                
+            </div>
+        </div>
+    </nav>
+
+</header>
+<script>
+    var mobileBtn = function f() {
+        var toggleMenu = document.getElementsByClassName("menu-toggle")[0];
+        var mobileMenu = document.getElementById("mobile-menu");
+        if (toggleMenu.classList.contains("active")) {
+            toggleMenu.classList.remove("active")
+            mobileMenu.classList.remove("active")
+        } else {
+            toggleMenu.classList.add("active")
+            mobileMenu.classList.add("active")
+        }
+    }
+</script>
+            <div class="main">
+                <div class="container">
+    
+    
+        <div class="post-toc">
+    <div class="tocbot-list">
+    </div>
+    <div class="tocbot-list-menu">
+        <a class="tocbot-toc-expand" onclick="expand_toc()">Expand all</a>
+        <a onclick="go_top()">Back to top</a>
+        <a onclick="go_bottom()">Go to bottom</a>
+    </div>
+</div>
+
+<script>
+    var tocbot_timer;
+    var DEPTH_MAX = 6; // 为 6 时展开所有
+    var tocbot_default_config = {
+        tocSelector: '.tocbot-list',
+        contentSelector: '.post-content',
+        headingSelector: 'h1, h2, h3, h4, h5',
+        orderedList: false,
+        scrollSmooth: true,
+        onClick: extend_click,
+    };
+
+    function extend_click() {
+        clearTimeout(tocbot_timer);
+        tocbot_timer = setTimeout(function() {
+            tocbot.refresh(obj_merge(tocbot_default_config, {
+                hasInnerContainers: true
+            }));
+        }, 420); // 这个值是由 tocbot 源码里定义的 scrollSmoothDuration 得来的
+    }
+
+    document.ready(function() {
+        tocbot.init(obj_merge(tocbot_default_config, {
+            collapseDepth: 1
+        }));
+    });
+
+    function expand_toc() {
+        var b = document.querySelector('.tocbot-toc-expand');
+        var expanded = b.getAttribute('data-expanded');
+        expanded ? b.removeAttribute('data-expanded') : b.setAttribute('data-expanded', true);
+        tocbot.refresh(obj_merge(tocbot_default_config, {
+            collapseDepth: expanded ? 1 : DEPTH_MAX
+        }));
+        b.innerText = expanded ? 'Expand all' : 'Collapse all';
+    }
+
+    function go_top() {
+        window.scrollTo(0, 0);
+    }
+
+    function go_bottom() {
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    function obj_merge(target, source) {
+        for (var item in source) {
+            if (source.hasOwnProperty(item)) {
+                target[item] = source[item];
+            }
+        }
+        return target;
+    }
+</script>
+    
+
+    
+    <article class="post-wrap">
+        <header class="post-header">
+            <h1 class="post-title">把 Arthas 交给 AI：集成 Claude Code CLI 与 Arthas MCP 的实战复盘</h1>
+            
+                <div class="post-meta">
+                    
+
+                    
+                    
+                        <span class="post-category">
+                    标签：
+                            
+                                <a href="/categories/Engineering/">Engineering</a>
+                            
+                        </span>
+                    
+                </div>
+            
+        </header>
+
+        <div class="post-content">
+            <p>在复杂的 Java 生产环境下，传统的 Arthas 交互模式（SSH 登录 -&gt; 挂载 -&gt; 手敲 <code>trace</code>&#x2F;<code>watch</code>）虽强大，但在高频问题排查中仍存在效率瓶颈。随着 <strong>Model Context Protocol (MCP)</strong> 的成熟，Arthas 4.x 引入了对 MCP 的支持，使得 AI 助手（如 Claude Code CLI）能够直接调度其底层的诊断技能（Skills）。</p>
+<p>本文涉及的主要依赖版本如下：</p>
+<ul>
+<li>Arthas：4.1.8</li>
+<li>Claude Code CLI：v2.1.91</li>
+</ul>
+<h2 id="上下文与问题定义-Context-Problem-Definition"><a href="#上下文与问题定义-Context-Problem-Definition" class="headerlink" title="上下文与问题定义 (Context &amp; Problem Definition)"></a>上下文与问题定义 (Context &amp; Problem Definition)</h2><p>我的初衷是构建一个“AI 驱动的诊断控制台”，让 Claude Code 直接执行 arthas中 <code>thread</code>、<code>jad</code> 等操作。然而，在初步尝试挂载工具时，我遭遇了两个核心障碍：</p>
+<p>通过翻阅 Arthas 的 <code>Configure</code> 类及其 HTTP 处理逻辑，我发现 MCP 服务并非通过命令行参数（CLI Options）开启，而是作为 HTTP Server 的一个特殊路径。</p>
+<ul>
+<li><strong>源码发现</strong>：<code>McpHttpRequestHandler</code> 负责拦截符合 <code>mcpEndpoint</code> 配置的请求。</li>
+<li><strong>配置优先级</strong>：该路径必须在 <code>arthas.properties</code> 或系统变量中显式定义，否则默认不激活。</li>
+</ul>
+<h3 id="验证桥接方案的可行性"><a href="#验证桥接方案的可行性" class="headerlink" title="验证桥接方案的可行性"></a>验证桥接方案的可行性</h3><p>由于 Claude Code 需要 Stdio 接口，我提出“远端转本地”的假设：寻找一个通用的 MCP 桥接器（Bridge），将远端 SSE 流转换为 Stdio 流。经过对比，社区的 <code>mcp-remote</code> 工具符合这一架构要求。</p>
+<h2 id="解决方案与实施-Solution-Implementation"><a href="#解决方案与实施-Solution-Implementation" class="headerlink" title="解决方案与实施 (Solution &amp; Implementation)"></a>解决方案与实施 (Solution &amp; Implementation)</h2><p>最终确立的标准化集成方案如下，分为服务端开启与客户端桥接两个关键步骤。</p>
+<h3 id="开启-Arthas-MCP-服务端点"><a href="#开启-Arthas-MCP-服务端点" class="headerlink" title="开启 Arthas MCP 服务端点"></a>开启 Arthas MCP 服务端点</h3><p>在执行 <code>arthas-boot.jar</code> 的当前目录下创建 <code>arthas.properties</code> 配置文件，以激活 SSE 路径：</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 激活 MCP 服务路径，默认为 /mcp</span></span><br><span class="line"><span class="attr">arthas.mcpEndpoint</span>=<span class="string">/mcp</span></span><br><span class="line"><span class="attr">arthas.httpPort</span>=<span class="string">8563</span></span><br></pre></td></tr></table></figure>
+
+<p>随后正常挂载 Arthas。启动后，Arthas 会在默认的 <strong>8563</strong> 端口暴露服务端点（<code>http://localhost:8563/mcp</code>）。</p>
+<h3 id="在-Claude-Code-中挂载桥接工具"><a href="#在-Claude-Code-中挂载桥接工具" class="headerlink" title="在 Claude Code 中挂载桥接工具"></a>在 Claude Code 中挂载桥接工具</h3><p>利用 <code>mcp-remote</code> 作为中间层，将 HTTP SSE 流量封装。首先通过 npm 安装桥接工具：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -g mcp-remote</span><br></pre></td></tr></table></figure>
+
+<p>接着在 Claude Code 中通过如下指令添加 Arthas MCP库：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 将远端 HTTP 流挂载给本地 Stdio CLI</span></span><br><span class="line">claude mcp add arthas mcp-remote http://localhost:8563/mcp</span><br><span class="line"><span class="comment"># 删除mcp</span></span><br><span class="line">claude mcp remove arthas</span><br></pre></td></tr></table></figure>
+
+<h3 id="验证连接状态"><a href="#验证连接状态" class="headerlink" title="验证连接状态"></a>验证连接状态</h3><p>通过 <code>claude mcp list</code> 指令可以观察到 <code>arthas</code> 工具包的状态：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">arthas: http://localhost:8563/mcp (HTTP) - ✓ Connected</span><br></pre></td></tr></table></figure>
+
+<h2 id="成果"><a href="#成果" class="headerlink" title="成果"></a>成果</h2><p><img src="/images/2026/04/7b5e7bef-2cf5-42ca-aebd-f1820623eda2-1.png" alt="img.png"></p>
+
+        </div>
+        
+            <section class="post-copyright">
+                <div class="post-copyright-avatar">
+                    <img src="/image/avatar.jpeg" alt="avatar">
+                </div>
+                <div class="post-copyright-info">
+                    <p class="copyright-item">
+                        <span>说明:</span>
+                        <span>本站点博文除特殊说明转载自xxx外，均为博主原创内容</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>转载请注明来源:</span>
+                        <span>Caratacus&#39;s Blog-《把 Arthas 交给 AI：集成 Claude Code CLI 与 Arthas MCP 的实战复盘》</span>
+                    </p>
+                    <p class="copyright-item">
+                        <span>本文链接地址:</span>
+                        <span><a href="https://caratacus.github.io/2026/04/08/arthas-mcp-claude-code-cli-integration/">https://caratacus.github.io/2026/04/08/arthas-mcp-claude-code-cli-integration/</a></span>
+                    </p>
+                </div>
+            </section>
+        
+        <section class="post-tags">
+            <div>
+                <span class="tag">
+                    
+                    
+                        <a href="/tags/Arthas/"># Arthas</a>
+                    
+                        <a href="/tags/MCP/"># MCP</a>
+                    
+                        <a href="/tags/Claude-Code/"># Claude Code</a>
+                    
+                        <a href="/tags/Java/"># Java</a>
+                    
+                        <a href="/tags/Diagnostic-Tools/"># Diagnostic Tools</a>
+                    
+                        
+                </span>
+            </div>
+            <div>
+                <a href="javascript:window.history.back();">back</a>
+                <span>· </span>
+                <a href="/">home</a>
+            </div>
+        </section>
+
+        <!-- Comments -->
+        
+    <div id="comments">
+        <div id="disqus_thread"></div>
+        <script>
+            var disqus_shortname = 'caratacus';
+            var disqus_config = function () {
+                this.page.url = 'https://caratacus.github.io/2026/04/08/arthas-mcp-claude-code-cli-integration/';
+                this.page.identifier = '2026/04/08/arthas-mcp-claude-code-cli-integration/';
+            };
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+
+
+
+        <section class="post-nav">
+            
+            
+            <a class="next" rel="next" href="/2026/04/01/spring-boot-4-spring-cloud-2025-upgrade-guide/">Spring Boot 4 与 Spring Cloud 2025.1 升级排障</a>
+            
+        </section>
+    </article>
+</div>
+
+            </div>
+            <footer id="footer" class="footer">
+    <div class="copyright">
+        <span>© <a href="https://github.com/Caratacus" target="_blank">Caratacus</a></span>
+    </div>
+</footer>
+
+    </div>
+</body>
+
+</html>
